@@ -33,7 +33,7 @@ public class TransactionController {
         if (all.isEmpty()) {
             System.out.println("Операций пока нет");
         } else {
-            System.out.println("\n=== ВСЕ ОПЕРАЦИИ ===");
+            System.out.println("\n|-- ВСЕ ОПЕРАЦИИ --|");
             System.out.println("--------------------------------------------------");
             for (Transaction t : all) {
                 System.out.println(t);

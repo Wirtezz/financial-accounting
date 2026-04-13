@@ -16,7 +16,7 @@ public class FinancialApplication {
     private static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
-        System.out.println("=== СИСТЕМА УЧЕТА ФИНАНСОВ ===");
+        System.out.println("    СИСТЕМА УЧЕТА ФИНАНСОВ");
 
         String url = "jdbc:mysql://localhost:3306/finance_db";
         String user = "root";
