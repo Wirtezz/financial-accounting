@@ -42,13 +42,7 @@ public class Transaction {
 
     @Override
     public String toString() {
-        return "Transaction{" +
-                "id=" + id +
-                ", amount=" + amount +
-                ", type=" + type +
-                ", description='" + description + '\'' +
-                ", category='" + category + '\'' +
-                ", date=" + transactionDate +
-                '}';
+        return String.format("ID: %d | %s | %.2f руб. | %s | %s | %s",
+                id, type, amount, category, description, transactionDate);
     }
 }

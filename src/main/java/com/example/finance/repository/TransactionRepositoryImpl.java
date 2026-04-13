@@ -3,6 +3,9 @@ package com.example.finance.repository;
 import com.example.finance.model.Transaction;
 import com.example.finance.model.TransactionType;
 
+import com.example.finance.model.Transaction;
+import com.example.finance.model.TransactionType;
+
 import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalDate;
@@ -29,25 +32,13 @@ public class TransactionRepositoryImpl implements TransactionRepository {
             stmt.executeUpdate();
 
             ResultSet rs = stmt.getGeneratedKeys();
-            if (rs.next()) t.setId(rs.getInt(1));
+            if (rs.next()) {
+                t.setId(rs.getInt(1));
+            }
+            System.out.println("Операция сохранена");
         } catch (SQLException e) {
-            System.err.println("Ошибка при сохранении транзакции: " + e.getMessage());
-            throw new RuntimeException("Ошибка сохранения транзакции", e);
+            System.err.println("Ошибка сохранения: " + e.getMessage());
         }
-    }
-
-    @Override
-    public Optional<Transaction> findById(int id) {
-        String sql = "SELECT * FROM transactions WHERE id = ?";
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, id);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) return Optional.of(mapRow(rs));
-        } catch (SQLException e) {
-            System.err.println("Ошибка при поиске транзакции по ID: " + e.getMessage());
-            throw new RuntimeException("Ошибка поиска транзакции", e);
-        }
-        return Optional.empty();
     }
 
     @Override
@@ -56,27 +47,28 @@ public class TransactionRepositoryImpl implements TransactionRepository {
         String sql = "SELECT * FROM transactions ORDER BY transaction_date DESC";
         try (Statement stmt = connection.createStatement()) {
             ResultSet rs = stmt.executeQuery(sql);
-            while (rs.next()) list.add(mapRow(rs));
+            while (rs.next()) {
+                list.add(mapRow(rs));
+            }
         } catch (SQLException e) {
-            System.err.println("Ошибка при получении всех транзакций: " + e.getMessage());
-            throw new RuntimeException("Ошибка получения всех транзакций", e);
+            System.err.println("Ошибка получения списка: " + e.getMessage());
         }
         return list;
     }
 
     @Override
-    public List<Transaction> findByType(String type) {
-        List<Transaction> list = new ArrayList<>();
-        String sql = "SELECT * FROM transactions WHERE type = ?";
+    public Optional<Transaction> findById(int id) {
+        String sql = "SELECT * FROM transactions WHERE id = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setString(1, type);
+            stmt.setInt(1, id);
             ResultSet rs = stmt.executeQuery();
-            while (rs.next()) list.add(mapRow(rs));
+            if (rs.next()) {
+                return Optional.of(mapRow(rs));
+            }
         } catch (SQLException e) {
-            System.err.println("Ошибка при поиске транзакций по типу: " + e.getMessage());
-            throw new RuntimeException("Ошибка поиска по типу", e);
+            System.err.println("Ошибка поиска: " + e.getMessage());
         }
-        return list;
+        return Optional.empty();
     }
 
     @Override
@@ -90,9 +82,9 @@ public class TransactionRepositoryImpl implements TransactionRepository {
             stmt.setDate(5, Date.valueOf(t.getTransactionDate()));
             stmt.setInt(6, t.getId());
             stmt.executeUpdate();
+            System.out.println("Операция обновлена");
         } catch (SQLException e) {
-            System.err.println("Ошибка при обновлении транзакции: " + e.getMessage());
-            throw new RuntimeException("Ошибка обновления транзакции", e);
+            System.err.println("Ошибка обновления: " + e.getMessage());
         }
     }
 
@@ -102,23 +94,93 @@ public class TransactionRepositoryImpl implements TransactionRepository {
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
-            System.out.println("Транзакция с ID " + id + " удалена");
+            System.out.println("Операция с ID " + id + " удалена");
         } catch (SQLException e) {
-            System.err.println("Ошибка при удалении транзакции: " + e.getMessage());
-            throw new RuntimeException("Ошибка удаления транзакции", e);
+            System.err.println("Ошибка удаления: " + e.getMessage());
         }
     }
 
     @Override
-    public BigDecimal getTotalByType(String type) {
-        String sql = "SELECT COALESCE(SUM(amount),0) FROM transactions WHERE type = ?";
+    public BigDecimal getTotalIncome() {
+        String sql = "SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type = 'INCOME'";
+        return getTotal(sql);
+    }
+
+    @Override
+    public BigDecimal getTotalExpense() {
+        String sql = "SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type = 'EXPENSE'";
+        return getTotal(sql);
+    }
+
+    @Override
+    public BigDecimal getTotalIncomeByPeriod(LocalDate startDate, LocalDate endDate) {
+        String sql = "SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type = 'INCOME' AND transaction_date BETWEEN ? AND ?";
+        return getTotalByPeriod(sql, startDate, endDate);
+    }
+
+    @Override
+    public BigDecimal getTotalExpenseByPeriod(LocalDate startDate, LocalDate endDate) {
+        String sql = "SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type = 'EXPENSE' AND transaction_date BETWEEN ? AND ?";
+        return getTotalByPeriod(sql, startDate, endDate);
+    }
+
+    @Override
+    public List<Transaction> findByPeriod(LocalDate startDate, LocalDate endDate) {
+        List<Transaction> list = new ArrayList<>();
+        String sql = "SELECT * FROM transactions WHERE transaction_date BETWEEN ? AND ? ORDER BY transaction_date DESC";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setDate(1, Date.valueOf(startDate));
+            stmt.setDate(2, Date.valueOf(endDate));
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                list.add(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("Ошибка поиска за период: " + e.getMessage());
+        }
+        return list;
+    }
+
+    @Override
+    public List<Transaction> findByTypeAndPeriod(String type, LocalDate startDate, LocalDate endDate) {
+        List<Transaction> list = new ArrayList<>();
+        String sql = "SELECT * FROM transactions WHERE type = ? AND transaction_date BETWEEN ? AND ? ORDER BY transaction_date DESC";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, type);
+            stmt.setDate(2, Date.valueOf(startDate));
+            stmt.setDate(3, Date.valueOf(endDate));
             ResultSet rs = stmt.executeQuery();
-            if (rs.next()) return rs.getBigDecimal(1);
+            while (rs.next()) {
+                list.add(mapRow(rs));
+            }
         } catch (SQLException e) {
-            System.err.println("Ошибка при подсчёте суммы: " + e.getMessage());
-            throw new RuntimeException("Ошибка подсчёта суммы", e);
+            System.err.println("Ошибка поиска: " + e.getMessage());
+        }
+        return list;
+    }
+
+    private BigDecimal getTotal(String sql) {
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet rs = stmt.executeQuery(sql);
+            if (rs.next()) {
+                return rs.getBigDecimal(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("Ошибка подсчёта: " + e.getMessage());
+        }
+        return BigDecimal.ZERO;
+    }
+
+    private BigDecimal getTotalByPeriod(String sql, LocalDate startDate, LocalDate endDate) {
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setDate(1, Date.valueOf(startDate));
+            stmt.setDate(2, Date.valueOf(endDate));
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getBigDecimal(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("Ошибка подсчёта за период: " + e.getMessage());
         }
         return BigDecimal.ZERO;
     }
