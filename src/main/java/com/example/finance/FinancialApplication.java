@@ -89,13 +89,12 @@ public class FinancialApplication {
         System.out.println("3. Показать ВСЕ операции");
         System.out.println("4. Показать БАЛАНС");
         System.out.println("5. УДАЛИТЬ операцию");
-        System.out.println("6. Отчет за ДЕНЬ");
-        System.out.println("7. Отчет за ПЕРИОД");
+        System.out.println("6. Отчет за ДЕНЬ (подробный)");
+        System.out.println("7. Отчет за ПЕРИОД (подробный)");
         System.out.println("8. ВЫХОД");
         System.out.println("=========================================");
     }
 
-    // Ввод даты через пробел: день месяц год
     private static LocalDate readDateFromInput() {
         while (true) {
             System.out.print("Введите дату (день месяц год, например: 13 04 2026): ");
@@ -107,7 +106,6 @@ public class FinancialApplication {
                     int day = Integer.parseInt(parts[0]);
                     int month = Integer.parseInt(parts[1]);
                     int year = Integer.parseInt(parts[2]);
-
                     LocalDate date = LocalDate.of(year, month, day);
                     return date;
                 } catch (Exception e) {
@@ -155,9 +153,7 @@ public class FinancialApplication {
 
     private static void deleteTransaction() {
         System.out.println("\n--- УДАЛЕНИЕ ОПЕРАЦИИ ---");
-
         controller.showAllTransactions();
-
         System.out.print("\nВведите ID операции для удаления: ");
         try {
             int id = Integer.parseInt(scanner.nextLine());
@@ -175,13 +171,10 @@ public class FinancialApplication {
 
     private static void showPeriodReport() {
         System.out.println("\n--- ОТЧЕТ ЗА ПЕРИОД ---");
-
         System.out.println("Введите НАЧАЛЬНУЮ дату:");
         LocalDate startDate = readDateFromInput();
-
         System.out.println("Введите КОНЕЧНУЮ дату:");
         LocalDate endDate = readDateFromInput();
-
         controller.showReportByPeriod(startDate, endDate);
     }
 }
