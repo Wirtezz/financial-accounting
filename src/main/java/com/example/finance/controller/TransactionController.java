@@ -33,7 +33,7 @@ public class TransactionController {
         if (all.isEmpty()) {
             System.out.println("Список транзакций пуст");
         } else {
-            System.out.println("=== СПИСОК ВСЕХ ОПЕРАЦИЙ ===");
+            System.out.println("    СПИСОК ВСЕХ ОПЕРАЦИЙ");
             for (Transaction t : all) {
                 System.out.println(t);
             }
@@ -41,7 +41,7 @@ public class TransactionController {
     }
 
     public void showBalance() {
-        System.out.println("=== ФИНАНСОВЫЙ ОТЧЁТ ===");
+        System.out.println("    ФИНАНСОВЫЙ ОТЧЁТ");
         System.out.println("Общий доход: " + service.getTotalIncome() + " руб.");
         System.out.println("Общий расход: " + service.getTotalExpense() + " руб.");
         System.out.println("Баланс: " + service.getBalance() + " руб.");
