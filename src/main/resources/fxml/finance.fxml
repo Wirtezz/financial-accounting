@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
 <VBox spacing="15" alignment="TOP_CENTER" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.finance.controller.FinanceFXController">
     <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
 
-    <!-- Заголовок по центру -->
     <Label text="СИСТЕМА УЧЕТА ФИНАНСОВ" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" alignment="CENTER" maxWidth="Infinity"/>
-
     <HBox alignment="CENTER_RIGHT" spacing="10">
         <Region HBox.hgrow="ALWAYS" />
         <Button fx:id="btnTheme" text="Тема" style="-fx-background-color: #6c757d; -fx-text-fill: white; -fx-font-weight: bold;"/>
     </HBox>
 
     <TabPane fx:id="mainTabPane">
-        <!-- Вкладка 1: Все операции -->
         <Tab text="Все операции" closable="false">
             <VBox spacing="10">
                 <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
@@ -34,7 +34,6 @@
             </VBox>
         </Tab>
 
-        <!-- Вкладка 2: Добавить операцию -->
         <Tab text="Добавить операцию" closable="false">
             <VBox spacing="15">
                 <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
@@ -66,7 +65,42 @@
             </VBox>
         </Tab>
 
-        <!-- Вкладка 3: Отчеты -->
+        <Tab text="Изменить" closable="false">
+            <VBox spacing="15">
+                <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+                <Label text="Редактирование выбранной операции" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+                <Label text="(Кликните на любую строку в таблице «Все операции» для загрузки данных)" style="-fx-font-style: italic; -fx-text-fill: gray;"/>
+
+                <GridPane hgap="10" vgap="10">
+                    <Label text="ID (не редактируется):" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <TextField fx:id="editId" editable="false" GridPane.rowIndex="0" GridPane.columnIndex="1" prefWidth="100"/>
+
+                    <Label text="Тип:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                    <ComboBox fx:id="editType" GridPane.rowIndex="1" GridPane.columnIndex="1" prefWidth="200"/>
+
+                    <Label text="Описание:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                    <TextField fx:id="editDescription" GridPane.rowIndex="2" GridPane.columnIndex="1" prefWidth="400"/>
+
+                    <Label text="Категория:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                    <TextField fx:id="editCategory" GridPane.rowIndex="3" GridPane.columnIndex="1" prefWidth="300"/>
+
+                    <Label text="Сумма (руб):" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                    <TextField fx:id="editAmount" GridPane.rowIndex="4" GridPane.columnIndex="1" prefWidth="200"/>
+
+                    <Label text="Дата:" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                    <HBox spacing="10" GridPane.rowIndex="5" GridPane.columnIndex="1">
+                        <TextField fx:id="editDay" promptText="День" prefWidth="80"/>
+                        <Label text="."/>
+                        <TextField fx:id="editMonth" promptText="Месяц" prefWidth="80"/>
+                        <Label text="."/>
+                        <TextField fx:id="editYear" promptText="Год" prefWidth="120"/>
+                    </HBox>
+
+                    <Button fx:id="btnUpdate" text="СОХРАНИТЬ ИЗМЕНЕНИЯ" GridPane.rowIndex="6" GridPane.columnIndex="1" prefWidth="200" style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                </GridPane>
+            </VBox>
+        </Tab>
+
         <Tab text="Отчеты" closable="false">
             <VBox spacing="15">
                 <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
@@ -98,7 +132,6 @@
             </VBox>
         </Tab>
 
-        <!-- Вкладка 4: Удалить -->
         <Tab text="Удалить" closable="false">
             <VBox spacing="15" alignment="CENTER">
                 <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
@@ -111,9 +144,45 @@
                 <Label fx:id="lblDeleteStatus" style="-fx-text-fill: gray;"/>
             </VBox>
         </Tab>
+
+        <Tab text="График" closable="false">
+            <VBox spacing="15">
+                <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+                <Label text="Динамика накопленного баланса" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+                <GridPane hgap="15" vgap="15">
+                    <Label text="Начальная дата:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <HBox spacing="10" GridPane.rowIndex="0" GridPane.columnIndex="1">
+                        <TextField fx:id="chartStartDay" promptText="День" prefWidth="80"/>
+                        <Label text="."/>
+                        <TextField fx:id="chartStartMonth" promptText="Месяц" prefWidth="80"/>
+                        <Label text="."/>
+                        <TextField fx:id="chartStartYear" promptText="Год" prefWidth="120"/>
+                    </HBox>
+
+                    <Label text="Конечная дата:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                    <HBox spacing="10" GridPane.rowIndex="1" GridPane.columnIndex="1">
+                        <TextField fx:id="chartEndDay" promptText="День" prefWidth="80"/>
+                        <Label text="."/>
+                        <TextField fx:id="chartEndMonth" promptText="Месяц" prefWidth="80"/>
+                        <Label text="."/>
+                        <TextField fx:id="chartEndYear" promptText="Год" prefWidth="120"/>
+                    </HBox>
+
+                    <Button fx:id="btnBuildChart" text="ПОСТРОИТЬ ГРАФИК" GridPane.rowIndex="2" GridPane.columnIndex="1" prefWidth="200" style="-fx-background-color: #9C27B0; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                </GridPane>
+
+                <LineChart fx:id="financeChart" title="Накопленный баланс" VBox.vgrow="ALWAYS">
+                    <xAxis>
+                        <CategoryAxis label="Дата" fx:id="xAxis"/>
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis label="Баланс (руб.)" fx:id="yAxis"/>
+                    </yAxis>
+                </LineChart>
+            </VBox>
+        </Tab>
     </TabPane>
 
-    <!-- Нижняя панель с итогами – по центру -->
     <HBox spacing="30" alignment="CENTER">
         <Label text="Доходы:"/>
         <Label fx:id="lblTotalIncome" text="0.00 руб."/>

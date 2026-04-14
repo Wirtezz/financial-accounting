@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TransactionRepository {
+    void updateTransaction(Transaction transaction);
     void save(Transaction transaction);
     List<Transaction> findAll();
     Optional<Transaction> findById(int id);

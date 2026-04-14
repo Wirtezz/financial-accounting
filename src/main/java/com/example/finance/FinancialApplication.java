@@ -89,8 +89,8 @@ public class FinancialApplication {
         System.out.println("3. Показать ВСЕ операции");
         System.out.println("4. Показать БАЛАНС");
         System.out.println("5. УДАЛИТЬ операцию");
-        System.out.println("6. Отчет за ДЕНЬ (подробный)");
-        System.out.println("7. Отчет за ПЕРИОД (подробный)");
+        System.out.println("6. Отчет за ДЕНЬ");
+        System.out.println("7. Отчет за ПЕРИОД");
         System.out.println("8. ВЫХОД");
         System.out.println("=========================================");
     }

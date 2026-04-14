@@ -12,12 +12,9 @@ import java.util.Map;
 
 public class TransactionController {
     private final TransactionService service;
-
     public TransactionController(TransactionService service) {
         this.service = service;
     }
-
-    // ДОБАВЬТЕ ЭТОТ МЕТОД
     public TransactionService getService() {
         return service;
     }
@@ -39,7 +36,7 @@ public class TransactionController {
         if (all.isEmpty()) {
             System.out.println("Операций пока нет");
         } else {
-            System.out.println("\n=== ВСЕ ОПЕРАЦИИ ===");
+            System.out.println("\n--- ВСЕ ОПЕРАЦИИ ---");
             System.out.println("--------------------------------------------------");
             for (Transaction t : all) {
                 System.out.println(t);
@@ -49,7 +46,7 @@ public class TransactionController {
     }
 
     public void showBalance() {
-        System.out.println("\n=== ТЕКУЩИЙ БАЛАНС ===");
+        System.out.println("\n--- ТЕКУЩИЙ БАЛАНС ---");
         System.out.printf("Всего доходов: %.2f руб.%n", service.getTotalIncome());
         System.out.printf("Всего расходов: %.2f руб.%n", service.getTotalExpense());
         System.out.printf("Баланс: %.2f руб.%n", service.getBalance());
@@ -61,9 +58,9 @@ public class TransactionController {
     }
 
     public void showDetailedReportByPeriod(LocalDate startDate, LocalDate endDate) {
-        System.out.println("\n+================================================+");
+        System.out.println("\n|================================================|");
         System.out.println("|           ПОДРОБНЫЙ ОТЧЕТ ЗА ПЕРИОД            |");
-        System.out.println("+================================================+");
+        System.out.println("|================================================|");
         System.out.println("Период: с " + startDate + " по " + endDate);
         System.out.println("--------------------------------------------------");
 

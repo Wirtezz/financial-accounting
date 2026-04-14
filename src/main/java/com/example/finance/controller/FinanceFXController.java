@@ -1,6 +1,7 @@
 package com.example.finance.controller;
 
 import com.example.finance.model.Transaction;
+import com.example.finance.model.TransactionType;
 import com.example.finance.repository.TransactionRepositoryImpl;
 import com.example.finance.service.TransactionServiceImpl;
 import javafx.application.Platform;
@@ -11,6 +12,10 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.effect.DropShadow;
@@ -30,9 +35,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class FinanceFXController implements Initializable {
 
@@ -49,6 +53,12 @@ public class FinanceFXController implements Initializable {
     @FXML private TextField txtDescription, txtCategory, txtAmount, txtDay, txtMonth, txtYear;
     @FXML private Button btnAdd;
 
+    // Редактирование
+    @FXML private TextField editId;
+    @FXML private ComboBox<String> editType;
+    @FXML private TextField editDescription, editCategory, editAmount, editDay, editMonth, editYear;
+    @FXML private Button btnUpdate;
+
     @FXML private TextField txtStartDay, txtStartMonth, txtStartYear, txtEndDay, txtEndMonth, txtEndYear;
     @FXML private Button btnShowReport;
     @FXML private TextArea reportArea;
@@ -56,56 +66,75 @@ public class FinanceFXController implements Initializable {
     @FXML private TextField txtDeleteId;
     @FXML private Button btnDelete;
     @FXML private Label lblDeleteStatus;
+
     @FXML private Button btnTheme;
 
+    @FXML private TextField chartStartDay, chartStartMonth, chartStartYear;
+    @FXML private TextField chartEndDay, chartEndMonth, chartEndYear;
+    @FXML private Button btnBuildChart;
+    @FXML private LineChart<String, Number> financeChart;
+    @FXML private CategoryAxis xAxis;
+    @FXML private NumberAxis yAxis;
+
     private TransactionController transactionController;
+    private TransactionRepositoryImpl repository; // прямой доступ для обновления
     private ObservableList<Transaction> transactionList = FXCollections.observableArrayList();
     private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private static String currentTheme = "Светлая";
-
-    private Image appIcon; // иконка, загруженная один раз
+    private Image appIcon;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // Загружаем иконку
+        // Иконка
         try {
             InputStream is = getClass().getResourceAsStream("/images/иконка финансов.png");
             if (is != null) {
                 appIcon = new Image(is);
-                System.out.println("Иконка загружена из /images/иконка финансов.png");
+                System.out.println("Иконка загружена");
             } else {
-                System.err.println("Иконка не найдена по пути /images/иконка финансов.png");
+                System.err.println("Иконка не найдена");
             }
         } catch (Exception e) {
-            System.err.println("Ошибка загрузки иконки: " + e.getMessage());
+            System.err.println("Ошибка иконки: " + e.getMessage());
         }
 
         showLoginAndWait();
         initDatabase();
         setupTable();
         setupThemeButton();
+
+        // Добавление
         cmbType.getItems().addAll("ДОХОД", "РАСХОД");
         cmbType.setValue("ДОХОД");
         btnAdd.setOnAction(e -> addTransaction());
+
+        // Редактирование
+        editType.getItems().addAll("ДОХОД", "РАСХОД");
+        editType.setValue("ДОХОД");
+        btnUpdate.setOnAction(e -> updateTransaction());
+
+        // Удаление, отчёты, график
         btnDelete.setOnAction(e -> deleteTransactionByNumber());
         btnShowReport.setOnAction(e -> showReport());
+        btnBuildChart.setOnAction(e -> buildChart());
+
+        // Клик по таблице -> загружаем в форму редактирования
+        transactionsTable.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
+            if (newVal != null) loadTransactionToEditForm(newVal);
+        });
+
         refreshData();
         applyTheme();
 
-        // Цветная нижняя строка
         lblTotalIncome.setStyle("-fx-text-fill: #2e7d32; -fx-font-weight: bold;");
         lblTotalExpense.setStyle("-fx-text-fill: #c62828; -fx-font-weight: bold;");
         lblBalance.setStyle("-fx-text-fill: #1565c0; -fx-font-weight: bold;");
     }
 
-    // Установка иконки на окно (Stage)
     private void setIcon(Stage stage) {
-        if (appIcon != null && stage != null) {
-            stage.getIcons().add(appIcon);
-        }
+        if (appIcon != null && stage != null) stage.getIcons().add(appIcon);
     }
 
-    // Установка иконки на диалог (Alert, ChoiceDialog)
     private void setIconToDialog(Dialog<?> dialog) {
         if (appIcon != null && dialog.getDialogPane().getScene() != null) {
             Stage stage = (Stage) dialog.getDialogPane().getScene().getWindow();
@@ -117,47 +146,33 @@ public class FinanceFXController implements Initializable {
         Stage loginStage = new Stage();
         loginStage.initModality(Modality.APPLICATION_MODAL);
         loginStage.setTitle("Вход в систему");
-        setIcon(loginStage); // иконка для окна входа
-
+        setIcon(loginStage);
         VBox root = new VBox(20);
         root.setAlignment(Pos.CENTER);
         root.setPadding(new Insets(30));
-
-        // Фоновая картинка
         try {
             InputStream is = getClass().getResourceAsStream("/images/img.png");
             if (is != null) {
                 Image bgImage = new Image(is);
-                BackgroundImage bg = new BackgroundImage(
-                        bgImage,
+                BackgroundImage bg = new BackgroundImage(bgImage,
                         BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT,
                         BackgroundPosition.DEFAULT,
-                        new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false, false, true, true)
-                );
+                        new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false, false, true, true));
                 root.setBackground(new Background(bg));
-            } else {
-                root.setStyle("-fx-background-color: #2c3e50;");
-            }
-        } catch (Exception e) {
-            root.setStyle("-fx-background-color: #2c3e50;");
-        }
-
+            } else root.setStyle("-fx-background-color: #2c3e50;");
+        } catch (Exception e) { root.setStyle("-fx-background-color: #2c3e50;"); }
         Label title = new Label("Система учёта финансов");
         title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 24));
         title.setTextFill(Color.WHITE);
         title.setEffect(new DropShadow(5, Color.BLACK));
-        title.setBackground(new Background(new BackgroundFill(
-                Color.rgb(0, 0, 0, 0.5), new CornerRadii(10), Insets.EMPTY
-        )));
-        title.setPadding(new Insets(10, 20, 10, 20));
-
+        title.setBackground(new Background(new BackgroundFill(Color.rgb(0,0,0,0.5), new CornerRadii(10), Insets.EMPTY)));
+        title.setPadding(new Insets(10,20,10,20));
         Button btnLogin = new Button("Зайти");
         Button btnExit = new Button("Выход");
         btnLogin.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 8 30;");
         btnExit.setStyle("-fx-background-color: #f44336; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 8 30;");
         btnLogin.setOnAction(e -> loginStage.close());
         btnExit.setOnAction(e -> System.exit(0));
-
         root.getChildren().addAll(title, btnLogin, btnExit);
         Scene scene = new Scene(root, 500, 400);
         loginStage.setScene(scene);
@@ -173,76 +188,49 @@ public class FinanceFXController implements Initializable {
             dialog.setContentText("Тема:");
             setIconToDialog(dialog);
             Optional<String> result = dialog.showAndWait();
-            result.ifPresent(theme -> {
-                currentTheme = theme;
-                applyTheme();
-            });
+            result.ifPresent(theme -> { currentTheme = theme; applyTheme(); });
         });
     }
 
     private void applyTheme() {
         Scene scene = transactionsTable.getScene();
         if (scene == null) return;
-
         String textColor, baseStyle, fieldStyle;
         switch (currentTheme) {
             case "Синяя":
                 baseStyle = "-fx-base: #1e3a5f; -fx-background: #d0e4f5; -fx-control-inner-background: #e6f2ff;";
-                textColor = "black";
-                fieldStyle = "-fx-text-fill: black;";
-                break;
+                textColor = "black"; fieldStyle = "-fx-text-fill: black;"; break;
             case "Зелёная":
                 baseStyle = "-fx-base: #2e6b2e; -fx-background: #d9f0d9; -fx-control-inner-background: #e8f5e8;";
-                textColor = "black";
-                fieldStyle = "-fx-text-fill: black;";
-                break;
+                textColor = "black"; fieldStyle = "-fx-text-fill: black;"; break;
             case "Красная":
                 baseStyle = "-fx-base: #8b0000; -fx-background: #ffe6e6; -fx-control-inner-background: #fff0f0;";
-                textColor = "black";
-                fieldStyle = "-fx-text-fill: black;";
-                break;
+                textColor = "black"; fieldStyle = "-fx-text-fill: black;"; break;
             case "Жёлтая":
                 baseStyle = "-fx-base: #b8860b; -fx-background: #fffacd; -fx-control-inner-background: #ffffe0;";
-                textColor = "black";
-                fieldStyle = "-fx-text-fill: black;";
-                break;
+                textColor = "black"; fieldStyle = "-fx-text-fill: black;"; break;
             default:
                 baseStyle = "-fx-base: #ececec; -fx-background: #f4f7fb; -fx-control-inner-background: white;";
-                textColor = "black";
-                fieldStyle = "-fx-text-fill: black;";
+                textColor = "black"; fieldStyle = "-fx-text-fill: black;";
         }
-
         scene.getRoot().setStyle(baseStyle);
-        txtDescription.setStyle(fieldStyle);
-        txtCategory.setStyle(fieldStyle);
-        txtAmount.setStyle(fieldStyle);
-        txtDay.setStyle(fieldStyle);
-        txtMonth.setStyle(fieldStyle);
-        txtYear.setStyle(fieldStyle);
-        txtStartDay.setStyle(fieldStyle);
-        txtStartMonth.setStyle(fieldStyle);
-        txtStartYear.setStyle(fieldStyle);
-        txtEndDay.setStyle(fieldStyle);
-        txtEndMonth.setStyle(fieldStyle);
-        txtEndYear.setStyle(fieldStyle);
-        txtDeleteId.setStyle(fieldStyle);
-        reportArea.setStyle(fieldStyle);
-
-        cmbType.setStyle(fieldStyle);
-        cmbType.lookupAll(".list-cell").forEach(node -> node.setStyle(fieldStyle));
-        cmbType.lookupAll(".combo-box-base").forEach(node -> node.setStyle(fieldStyle));
-
+        txtDescription.setStyle(fieldStyle); txtCategory.setStyle(fieldStyle); txtAmount.setStyle(fieldStyle);
+        txtDay.setStyle(fieldStyle); txtMonth.setStyle(fieldStyle); txtYear.setStyle(fieldStyle);
+        editDescription.setStyle(fieldStyle); editCategory.setStyle(fieldStyle); editAmount.setStyle(fieldStyle);
+        editDay.setStyle(fieldStyle); editMonth.setStyle(fieldStyle); editYear.setStyle(fieldStyle); editId.setStyle(fieldStyle);
+        txtStartDay.setStyle(fieldStyle); txtStartMonth.setStyle(fieldStyle); txtStartYear.setStyle(fieldStyle);
+        txtEndDay.setStyle(fieldStyle); txtEndMonth.setStyle(fieldStyle); txtEndYear.setStyle(fieldStyle);
+        txtDeleteId.setStyle(fieldStyle); reportArea.setStyle(fieldStyle);
+        cmbType.setStyle(fieldStyle); cmbType.lookupAll(".list-cell").forEach(node -> node.setStyle(fieldStyle));
+        editType.setStyle(fieldStyle); editType.lookupAll(".list-cell").forEach(node -> node.setStyle(fieldStyle));
         transactionsTable.setStyle("-fx-text-fill: " + textColor + ";");
         transactionsTable.setRowFactory(tv -> {
             TableRow<Transaction> row = new TableRow<>();
             row.styleProperty().bind(javafx.beans.binding.Bindings.when(row.emptyProperty())
-                    .then("")
-                    .otherwise("-fx-text-fill: " + textColor + ";"));
+                    .then("").otherwise("-fx-text-fill: " + textColor + ";"));
             return row;
         });
-        transactionsTable.lookupAll(".column-header .label").forEach(node ->
-                node.setStyle("-fx-text-fill: " + textColor + ";")
-        );
+        transactionsTable.lookupAll(".column-header .label").forEach(node -> node.setStyle("-fx-text-fill: " + textColor + ";"));
     }
 
     private void initDatabase() {
@@ -253,8 +241,8 @@ public class FinanceFXController implements Initializable {
             Flyway flyway = Flyway.configure().dataSource(url, user, password).locations("classpath:db/migration").load();
             flyway.migrate();
             Connection conn = DriverManager.getConnection(url, user, password);
-            TransactionRepositoryImpl repo = new TransactionRepositoryImpl(conn);
-            TransactionServiceImpl service = new TransactionServiceImpl(repo);
+            repository = new TransactionRepositoryImpl(conn);
+            TransactionServiceImpl service = new TransactionServiceImpl(repository);
             transactionController = new TransactionController(service);
         } catch (Exception e) {
             showAlert("Ошибка БД", "Не удалось подключиться: " + e.getMessage());
@@ -274,7 +262,6 @@ public class FinanceFXController implements Initializable {
             LocalDate date = cellData.getValue().getTransactionDate();
             return new javafx.beans.property.SimpleStringProperty(date != null ? date.format(dateFormatter) : "");
         });
-
         colCategory.setCellFactory(tc -> {
             TableCell<Transaction, String> cell = new TableCell<>();
             javafx.scene.text.Text text = new javafx.scene.text.Text();
@@ -291,12 +278,7 @@ public class FinanceFXController implements Initializable {
             text.textProperty().bind(cell.itemProperty());
             return cell;
         });
-
-        transactionsTable.setRowFactory(tv -> {
-            TableRow<Transaction> row = new TableRow<>();
-            row.setPrefHeight(35);
-            return row;
-        });
+        transactionsTable.setRowFactory(tv -> { TableRow<Transaction> row = new TableRow<>(); row.setPrefHeight(35); return row; });
         transactionsTable.setItems(transactionList);
         transactionsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     }
@@ -327,16 +309,56 @@ public class FinanceFXController implements Initializable {
             int month = Integer.parseInt(txtMonth.getText().trim());
             int year = Integer.parseInt(txtYear.getText().trim());
             LocalDate date = LocalDate.of(year, month, day);
-            if (type.equals("ДОХОД")) {
-                transactionController.addIncome(description, category, amount, date);
-            } else {
-                transactionController.addExpense(description, category, amount, date);
-            }
+            if (type.equals("ДОХОД")) transactionController.addIncome(description, category, amount, date);
+            else transactionController.addExpense(description, category, amount, date);
             txtDescription.clear(); txtCategory.clear(); txtAmount.clear(); txtDay.clear(); txtMonth.clear(); txtYear.clear();
             refreshData();
             showAlert("Успех", "Операция добавлена");
+        } catch (Exception e) { showAlert("Ошибка", "Неверные данные: " + e.getMessage()); }
+    }
+
+    private void loadTransactionToEditForm(Transaction t) {
+        editId.setText(String.valueOf(t.getId()));
+        editType.setValue(t.getType().toString());
+        editDescription.setText(t.getDescription());
+        editCategory.setText(t.getCategory());
+        editAmount.setText(t.getAmount().toString());
+        LocalDate date = t.getTransactionDate();
+        editDay.setText(String.valueOf(date.getDayOfMonth()));
+        editMonth.setText(String.valueOf(date.getMonthValue()));
+        editYear.setText(String.valueOf(date.getYear()));
+    }
+
+    private void updateTransaction() {
+        try {
+            int id = Integer.parseInt(editId.getText().trim());
+            String type = editType.getValue();
+            String description = editDescription.getText().trim();
+            String category = editCategory.getText().trim();
+            String amountStr = editAmount.getText().trim().replace(',', '.');
+            if (description.isEmpty() || category.isEmpty() || amountStr.isEmpty()) {
+                showAlert("Ошибка", "Заполните описание, категорию и сумму");
+                return;
+            }
+            BigDecimal amount = new BigDecimal(amountStr);
+            int day = Integer.parseInt(editDay.getText().trim());
+            int month = Integer.parseInt(editMonth.getText().trim());
+            int year = Integer.parseInt(editYear.getText().trim());
+            LocalDate date = LocalDate.of(year, month, day);
+            TransactionType transactionType = type.equals("ДОХОД") ? TransactionType.INCOME : TransactionType.EXPENSE;
+            Transaction updated = new Transaction(amount, transactionType, description, category, date);
+            updated.setId(id);
+
+            repository.update(updated);  // обновление в БД
+
+            refreshData();               // перезагрузка таблицы
+            showAlert("Успех", "Операция обновлена");
+
+            editId.clear(); editDescription.clear(); editCategory.clear(); editAmount.clear();
+            editDay.clear(); editMonth.clear(); editYear.clear();
         } catch (Exception e) {
-            showAlert("Ошибка", "Неверные данные: " + e.getMessage());
+            showAlert("Ошибка", "Не удалось обновить: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -365,27 +387,19 @@ public class FinanceFXController implements Initializable {
                 lblDeleteStatus.setText("Операция №" + rowNumber + " удалена");
                 showAlert("Успех", "Операция удалена");
             }
-        } catch (NumberFormatException e) {
-            showAlert("Ошибка", "Введите номер строки (цифру)");
-        }
+        } catch (NumberFormatException e) { showAlert("Ошибка", "Введите номер строки (цифру)"); }
     }
 
     private void showReport() {
         try {
-            int startDay = Integer.parseInt(txtStartDay.getText().trim());
-            int startMonth = Integer.parseInt(txtStartMonth.getText().trim());
-            int startYear = Integer.parseInt(txtStartYear.getText().trim());
-            int endDay = Integer.parseInt(txtEndDay.getText().trim());
-            int endMonth = Integer.parseInt(txtEndMonth.getText().trim());
-            int endYear = Integer.parseInt(txtEndYear.getText().trim());
-            LocalDate startDate = LocalDate.of(startYear, startMonth, startDay);
-            LocalDate endDate = LocalDate.of(endYear, endMonth, endDay);
-            BigDecimal totalIncome = transactionController.getService().getTotalIncomeByPeriod(startDate, endDate);
-            BigDecimal totalExpense = transactionController.getService().getTotalExpenseByPeriod(startDate, endDate);
+            LocalDate start = LocalDate.of(Integer.parseInt(txtStartYear.getText()), Integer.parseInt(txtStartMonth.getText()), Integer.parseInt(txtStartDay.getText()));
+            LocalDate end = LocalDate.of(Integer.parseInt(txtEndYear.getText()), Integer.parseInt(txtEndMonth.getText()), Integer.parseInt(txtEndDay.getText()));
+            BigDecimal totalIncome = transactionController.getService().getTotalIncomeByPeriod(start, end);
+            BigDecimal totalExpense = transactionController.getService().getTotalExpenseByPeriod(start, end);
             BigDecimal balance = totalIncome.subtract(totalExpense);
-            List<Transaction> transactions = transactionController.getService().getTransactionsByPeriod(startDate, endDate);
+            List<Transaction> transactions = transactionController.getService().getTransactionsByPeriod(start, end);
             StringBuilder sb = new StringBuilder();
-            sb.append("ОТЧЕТ ЗА ПЕРИОД: ").append(startDate.format(dateFormatter)).append(" - ").append(endDate.format(dateFormatter)).append("\n");
+            sb.append("ОТЧЕТ ЗА ПЕРИОД: ").append(start.format(dateFormatter)).append(" - ").append(end.format(dateFormatter)).append("\n");
             sb.append("--------------------------------------------------\n");
             sb.append(String.format("ДОХОДЫ: %.2f руб.\n", totalIncome));
             sb.append(String.format("РАСХОДЫ: %.2f руб.\n", totalExpense));
@@ -393,13 +407,38 @@ public class FinanceFXController implements Initializable {
             sb.append("--------------------------------------------------\n");
             sb.append("ДЕТАЛИ ОПЕРАЦИЙ:\n");
             for (Transaction t : transactions) {
-                sb.append(String.format("%s | %s | %.2f руб. | %s\n",
-                        t.getTransactionDate().format(dateFormatter), t.getType(), t.getAmount(), t.getDescription()));
+                sb.append(String.format("%s | %s | %.2f руб. | Категория: %s | %s\n",
+                        t.getTransactionDate().format(dateFormatter), t.getType(), t.getAmount(), t.getCategory(), t.getDescription()));
             }
             reportArea.setText(sb.toString());
-        } catch (Exception e) {
-            showAlert("Ошибка", "Неверный формат даты: " + e.getMessage());
-        }
+        } catch (Exception e) { showAlert("Ошибка", "Неверный формат даты: " + e.getMessage()); }
+    }
+
+    private void buildChart() {
+        try {
+            LocalDate start = LocalDate.of(Integer.parseInt(chartStartYear.getText()), Integer.parseInt(chartStartMonth.getText()), Integer.parseInt(chartStartDay.getText()));
+            LocalDate end = LocalDate.of(Integer.parseInt(chartEndYear.getText()), Integer.parseInt(chartEndMonth.getText()), Integer.parseInt(chartEndDay.getText()));
+            List<Transaction> transactions = transactionController.getService().getTransactionsByPeriod(start, end);
+            Map<LocalDate, List<Transaction>> byDate = transactions.stream().collect(Collectors.groupingBy(Transaction::getTransactionDate));
+            List<LocalDate> sortedDates = byDate.keySet().stream().sorted().collect(Collectors.toList());
+            if (sortedDates.isEmpty()) { showAlert("Нет данных", "За выбранный период нет операций"); return; }
+            XYChart.Series<String, Number> balanceSeries = new XYChart.Series<>();
+            balanceSeries.setName("Накопленный баланс");
+            BigDecimal runningBalance = BigDecimal.ZERO;
+            for (LocalDate date : sortedDates) {
+                String label = date.format(dateFormatter);
+                BigDecimal dayIncome = byDate.get(date).stream().filter(t -> t.getType().toString().equals("INCOME")).map(Transaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal dayExpense = byDate.get(date).stream().filter(t -> t.getType().toString().equals("EXPENSE")).map(Transaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+                runningBalance = runningBalance.add(dayIncome.subtract(dayExpense));
+                balanceSeries.getData().add(new XYChart.Data<>(label, runningBalance));
+            }
+            financeChart.getData().clear();
+            financeChart.getData().add(balanceSeries);
+            balanceSeries.getNode().setStyle("-fx-stroke: #1565c0; -fx-stroke-width: 3px;");
+            financeChart.setTitle("Динамика баланса (накопленный итог)");
+            xAxis.setLabel("Дата");
+            yAxis.setLabel("Баланс (руб.)");
+        } catch (Exception e) { showAlert("Ошибка", "Неверный формат даты для графика: " + e.getMessage()); }
     }
 
     private void showAlert(String title, String msg) {
