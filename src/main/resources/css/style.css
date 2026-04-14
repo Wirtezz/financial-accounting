@@ -1,0 +1,160 @@
+.root {
+    -fx-font-family: "Segoe UI", "Roboto", "Arial", sans-serif;
+    -fx-background-color: #f4f7fb;
+}
+
+/* Заголовок окна */
+.label-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+}
+
+/* Таблицы */
+.table-view {
+    -fx-background-color: white;
+    -fx-border-color: #d0dae8;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #eef2f7;
+    -fx-border-radius: 8px 8px 0 0;
+}
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+    -fx-border-color: #dce3ec;
+    -fx-border-width: 0 0 1 0;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #2c3e50;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+.table-row-cell {
+    -fx-background-color: white;
+    -fx-padding: 4px;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #fafcff;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #d4e3fd;
+}
+
+/* Кнопки */
+.button {
+    -fx-background-color: #4a90d9;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-padding: 8 20 8 20;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+}
+.button:hover {
+    -fx-background-color: #357abd;
+}
+.button:pressed {
+    -fx-background-color: #2c6aa8;
+}
+
+/* Специальные кнопки */
+.button-add {
+    -fx-background-color: #5cb85c;
+}
+.button-add:hover {
+    -fx-background-color: #4cae4c;
+}
+.button-delete {
+    -fx-background-color: #d9534f;
+}
+.button-delete:hover {
+    -fx-background-color: #c9302c;
+}
+.button-report {
+    -fx-background-color: #f0ad4e;
+}
+.button-report:hover {
+    -fx-background-color: #eea236;
+}
+
+/* Поля ввода */
+.text-field, .combo-box, .text-area {
+    -fx-background-color: white;
+    -fx-border-color: #d0dae8;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 6 10;
+    -fx-font-size: 13px;
+}
+.text-field:focused, .combo-box:focused, .text-area:focused {
+    -fx-border-color: #4a90d9;
+    -fx-border-width: 2px;
+}
+
+/* Вкладки */
+.tab-pane {
+    -fx-background-color: white;
+    -fx-border-color: #d0dae8;
+    -fx-border-radius: 8px;
+}
+.tab {
+    -fx-background-color: #eef2f7;
+    -fx-padding: 8 20 8 20;
+}
+.tab:selected {
+    -fx-background-color: #4a90d9;
+}
+.tab:selected .tab-label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+.tab .tab-label {
+    -fx-text-fill: #2c3e50;
+}
+
+/* Статистические метки */
+.label-income {
+    -fx-text-fill: #5cb85c;
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+}
+.label-expense {
+    -fx-text-fill: #d9534f;
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+}
+.label-balance {
+    -fx-text-fill: #4a90d9;
+    -fx-font-weight: bold;
+    -fx-font-size: 18px;
+}
+
+/* Диалоги */
+.dialog-pane {
+    -fx-background-color: white;
+}
+.dialog-pane .header-panel {
+    -fx-background-color: #4a90d9;
+}
+.dialog-pane .header-panel .label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+/* Полоса прокрутки */
+.scroll-bar:vertical {
+    -fx-background-color: #eef2f7;
+}
+.scroll-bar:vertical .thumb {
+    -fx-background-color: #b8c5d4;
+    -fx-background-radius: 10px;
+}

@@ -17,6 +17,11 @@ public class TransactionController {
         this.service = service;
     }
 
+    // ДОБАВЬТЕ ЭТОТ МЕТОД
+    public TransactionService getService() {
+        return service;
+    }
+
     public void addIncome(String description, String category, BigDecimal amount, LocalDate date) {
         Transaction t = new Transaction(amount, TransactionType.INCOME, description, category, date);
         service.addTransaction(t);
@@ -44,7 +49,7 @@ public class TransactionController {
     }
 
     public void showBalance() {
-        System.out.println("\n--- ТЕКУЩИЙ БАЛАНС ---");
+        System.out.println("\n=== ТЕКУЩИЙ БАЛАНС ===");
         System.out.printf("Всего доходов: %.2f руб.%n", service.getTotalIncome());
         System.out.printf("Всего расходов: %.2f руб.%n", service.getTotalExpense());
         System.out.printf("Баланс: %.2f руб.%n", service.getBalance());
@@ -56,9 +61,9 @@ public class TransactionController {
     }
 
     public void showDetailedReportByPeriod(LocalDate startDate, LocalDate endDate) {
-        System.out.println("\n|===============================================|");
+        System.out.println("\n+================================================+");
         System.out.println("|           ПОДРОБНЫЙ ОТЧЕТ ЗА ПЕРИОД            |");
-        System.out.println("|================================================|");
+        System.out.println("+================================================+");
         System.out.println("Период: с " + startDate + " по " + endDate);
         System.out.println("--------------------------------------------------");
 
