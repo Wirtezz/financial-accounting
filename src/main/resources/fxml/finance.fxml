@@ -181,6 +181,51 @@
                 </LineChart>
             </VBox>
         </Tab>
+
+        <Tab text="Планировщик" closable="false">
+            <VBox spacing="15">
+                <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+
+                <Label text="Регулярные ежемесячные платежи" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+
+                <!-- Панель добавления -->
+                <GridPane hgap="10" vgap="10">
+                    <Label text="Тип:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <ComboBox fx:id="schedType" prefWidth="120" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                    <Label text="Категория:" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                    <TextField fx:id="schedCategory" prefWidth="150" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+
+                    <Label text="Описание:" GridPane.rowIndex="0" GridPane.columnIndex="4"/>
+                    <TextField fx:id="schedDescription" prefWidth="200" GridPane.rowIndex="0" GridPane.columnIndex="5"/>
+
+                    <Label text="Сумма:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                    <TextField fx:id="schedAmount" prefWidth="120" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                    <Label text="День месяца:" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
+                    <TextField fx:id="schedDay" prefWidth="80" GridPane.rowIndex="1" GridPane.columnIndex="3"/>
+
+                    <Button fx:id="btnAddScheduled" text="ДОБАВИТЬ" GridPane.rowIndex="1" GridPane.columnIndex="5"
+                            prefWidth="120" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                </GridPane>
+
+                <!-- Таблица регулярных операций -->
+                <TableView fx:id="scheduledTable" prefHeight="250" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colSchedId" text="ID" prefWidth="50"/>
+                        <TableColumn fx:id="colSchedType" text="Тип" prefWidth="100"/>
+                        <TableColumn fx:id="colSchedCategory" text="Категория" prefWidth="160"/>
+                        <TableColumn fx:id="colSchedDescription" text="Описание" prefWidth="220"/>
+                        <TableColumn fx:id="colSchedAmount" text="Сумма" prefWidth="120"/>
+                        <TableColumn fx:id="colSchedDay" text="День месяца" prefWidth="120"/>
+                        <TableColumn fx:id="colSchedLast" text="Последний запуск" prefWidth="150"/>
+                        <TableColumn fx:id="colSchedDelete" text="Удалить" prefWidth="80"/>
+                    </columns>
+                </TableView>
+
+                <Label fx:id="schedInfo" style="-fx-text-fill: gray;"/>
+            </VBox>
+        </Tab>
     </TabPane>
 
     <HBox spacing="30" alignment="CENTER">

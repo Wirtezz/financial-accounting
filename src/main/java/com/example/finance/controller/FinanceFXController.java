@@ -1,7 +1,9 @@
 package com.example.finance.controller;
 
+import com.example.finance.model.RecurringTransaction;
 import com.example.finance.model.Transaction;
 import com.example.finance.model.TransactionType;
+import com.example.finance.repository.RecurringTransactionRepositoryImpl;
 import com.example.finance.repository.TransactionRepositoryImpl;
 import com.example.finance.service.TransactionServiceImpl;
 import javafx.application.Platform;
@@ -40,6 +42,7 @@ import java.util.stream.Collectors;
 
 public class FinanceFXController implements Initializable {
 
+    // ---------- Основная таблица ----------
     @FXML private TableView<Transaction> transactionsTable;
     @FXML private TableColumn<Transaction, Integer> colNumber;
     @FXML private TableColumn<Transaction, String> colType;
@@ -48,27 +51,34 @@ public class FinanceFXController implements Initializable {
     @FXML private TableColumn<Transaction, String> colDescription;
     @FXML private TableColumn<Transaction, String> colDate;
 
+    // Статистика
     @FXML private Label lblTotalIncome, lblTotalExpense, lblBalance;
+
+    // Добавление операции
     @FXML private ComboBox<String> cmbType;
     @FXML private TextField txtDescription, txtCategory, txtAmount, txtDay, txtMonth, txtYear;
     @FXML private Button btnAdd;
 
-    // Редактирование
+    // Редактирование операции
     @FXML private TextField editId;
     @FXML private ComboBox<String> editType;
     @FXML private TextField editDescription, editCategory, editAmount, editDay, editMonth, editYear;
     @FXML private Button btnUpdate;
 
+    // Отчёты
     @FXML private TextField txtStartDay, txtStartMonth, txtStartYear, txtEndDay, txtEndMonth, txtEndYear;
     @FXML private Button btnShowReport;
     @FXML private TextArea reportArea;
 
+    // Удаление по номеру строки
     @FXML private TextField txtDeleteId;
     @FXML private Button btnDelete;
     @FXML private Label lblDeleteStatus;
 
+    // Тема
     @FXML private Button btnTheme;
 
+    // График
     @FXML private TextField chartStartDay, chartStartMonth, chartStartYear;
     @FXML private TextField chartEndDay, chartEndMonth, chartEndYear;
     @FXML private Button btnBuildChart;
@@ -76,9 +86,27 @@ public class FinanceFXController implements Initializable {
     @FXML private CategoryAxis xAxis;
     @FXML private NumberAxis yAxis;
 
+    // ---------- Планировщик (регулярные операции) ----------
+    @FXML private ComboBox<String> schedType;
+    @FXML private TextField schedCategory, schedDescription, schedAmount, schedDay;
+    @FXML private Button btnAddScheduled;
+    @FXML private TableView<RecurringTransaction> scheduledTable;
+    @FXML private TableColumn<RecurringTransaction, Integer> colSchedId;
+    @FXML private TableColumn<RecurringTransaction, String> colSchedType;
+    @FXML private TableColumn<RecurringTransaction, String> colSchedCategory;
+    @FXML private TableColumn<RecurringTransaction, String> colSchedDescription;
+    @FXML private TableColumn<RecurringTransaction, BigDecimal> colSchedAmount;
+    @FXML private TableColumn<RecurringTransaction, Integer> colSchedDay;
+    @FXML private TableColumn<RecurringTransaction, String> colSchedLast;
+    @FXML private TableColumn<RecurringTransaction, Void> colSchedDelete;
+    @FXML private Label schedInfo;
+
+    // ---------- Внутренние поля ----------
     private TransactionController transactionController;
-    private TransactionRepositoryImpl repository; // прямой доступ для обновления
+    private TransactionRepositoryImpl repository;
+    private RecurringTransactionRepositoryImpl recurringRepo;
     private ObservableList<Transaction> transactionList = FXCollections.observableArrayList();
+    private ObservableList<RecurringTransaction> scheduledList = FXCollections.observableArrayList();
     private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private static String currentTheme = "Светлая";
     private Image appIcon;
@@ -103,7 +131,7 @@ public class FinanceFXController implements Initializable {
         setupTable();
         setupThemeButton();
 
-        // Добавление
+        // Добавление операции
         cmbType.getItems().addAll("ДОХОД", "РАСХОД");
         cmbType.setValue("ДОХОД");
         btnAdd.setOnAction(e -> addTransaction());
@@ -113,24 +141,43 @@ public class FinanceFXController implements Initializable {
         editType.setValue("ДОХОД");
         btnUpdate.setOnAction(e -> updateTransaction());
 
-        // Удаление, отчёты, график
+        // Удаление
         btnDelete.setOnAction(e -> deleteTransactionByNumber());
+
+        // Отчёты
         btnShowReport.setOnAction(e -> showReport());
+
+        // График
         btnBuildChart.setOnAction(e -> buildChart());
 
-        // Клик по таблице -> загружаем в форму редактирования
+        // Клик по таблице -> форма редактирования
         transactionsTable.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
             if (newVal != null) loadTransactionToEditForm(newVal);
         });
 
+        // ---------- Планировщик ----------
+        schedType.getItems().addAll("ДОХОД", "РАСХОД");
+        schedType.setValue("ДОХОД");
+        btnAddScheduled.setOnAction(e -> addScheduledTransaction());
+        setupScheduledTable();
+        refreshScheduledTable();
+
+        // Обновляем основную таблицу
         refreshData();
         applyTheme();
 
+        // Цветная нижняя строка
         lblTotalIncome.setStyle("-fx-text-fill: #2e7d32; -fx-font-weight: bold;");
         lblTotalExpense.setStyle("-fx-text-fill: #c62828; -fx-font-weight: bold;");
         lblBalance.setStyle("-fx-text-fill: #1565c0; -fx-font-weight: bold;");
+
+        // Автоматическая проверка и добавление пропущенных регулярных операций
+        processMissedRecurringTransactions();
     }
 
+    // ------------------------------------------------------------------
+    // Иконки, окно входа, тема
+    // ------------------------------------------------------------------
     private void setIcon(Stage stage) {
         if (appIcon != null && stage != null) stage.getIcons().add(appIcon);
     }
@@ -214,6 +261,7 @@ public class FinanceFXController implements Initializable {
                 textColor = "black"; fieldStyle = "-fx-text-fill: black;";
         }
         scene.getRoot().setStyle(baseStyle);
+        // текстовые поля основной вкладки
         txtDescription.setStyle(fieldStyle); txtCategory.setStyle(fieldStyle); txtAmount.setStyle(fieldStyle);
         txtDay.setStyle(fieldStyle); txtMonth.setStyle(fieldStyle); txtYear.setStyle(fieldStyle);
         editDescription.setStyle(fieldStyle); editCategory.setStyle(fieldStyle); editAmount.setStyle(fieldStyle);
@@ -221,8 +269,12 @@ public class FinanceFXController implements Initializable {
         txtStartDay.setStyle(fieldStyle); txtStartMonth.setStyle(fieldStyle); txtStartYear.setStyle(fieldStyle);
         txtEndDay.setStyle(fieldStyle); txtEndMonth.setStyle(fieldStyle); txtEndYear.setStyle(fieldStyle);
         txtDeleteId.setStyle(fieldStyle); reportArea.setStyle(fieldStyle);
+        // планировщик
+        schedCategory.setStyle(fieldStyle); schedDescription.setStyle(fieldStyle); schedAmount.setStyle(fieldStyle); schedDay.setStyle(fieldStyle);
         cmbType.setStyle(fieldStyle); cmbType.lookupAll(".list-cell").forEach(node -> node.setStyle(fieldStyle));
         editType.setStyle(fieldStyle); editType.lookupAll(".list-cell").forEach(node -> node.setStyle(fieldStyle));
+        schedType.setStyle(fieldStyle); schedType.lookupAll(".list-cell").forEach(node -> node.setStyle(fieldStyle));
+        // таблицы
         transactionsTable.setStyle("-fx-text-fill: " + textColor + ";");
         transactionsTable.setRowFactory(tv -> {
             TableRow<Transaction> row = new TableRow<>();
@@ -231,8 +283,13 @@ public class FinanceFXController implements Initializable {
             return row;
         });
         transactionsTable.lookupAll(".column-header .label").forEach(node -> node.setStyle("-fx-text-fill: " + textColor + ";"));
+        scheduledTable.setStyle("-fx-text-fill: " + textColor + ";");
+        scheduledTable.lookupAll(".column-header .label").forEach(node -> node.setStyle("-fx-text-fill: " + textColor + ";"));
     }
 
+    // ------------------------------------------------------------------
+    // Инициализация БД
+    // ------------------------------------------------------------------
     private void initDatabase() {
         try {
             String url = "jdbc:mysql://localhost:3306/finance_db";
@@ -242,6 +299,7 @@ public class FinanceFXController implements Initializable {
             flyway.migrate();
             Connection conn = DriverManager.getConnection(url, user, password);
             repository = new TransactionRepositoryImpl(conn);
+            recurringRepo = new RecurringTransactionRepositoryImpl(conn);
             TransactionServiceImpl service = new TransactionServiceImpl(repository);
             transactionController = new TransactionController(service);
         } catch (Exception e) {
@@ -249,6 +307,9 @@ public class FinanceFXController implements Initializable {
         }
     }
 
+    // ------------------------------------------------------------------
+    // Основные операции (таблица, добавление, редактирование, удаление, отчёты, график)
+    // ------------------------------------------------------------------
     private void setupTable() {
         colNumber.setCellValueFactory(cellData -> {
             int index = transactionsTable.getItems().indexOf(cellData.getValue()) + 1;
@@ -348,18 +409,12 @@ public class FinanceFXController implements Initializable {
             TransactionType transactionType = type.equals("ДОХОД") ? TransactionType.INCOME : TransactionType.EXPENSE;
             Transaction updated = new Transaction(amount, transactionType, description, category, date);
             updated.setId(id);
-
-            repository.update(updated);  // обновление в БД
-
-            refreshData();               // перезагрузка таблицы
+            repository.update(updated);
+            refreshData();
             showAlert("Успех", "Операция обновлена");
-
             editId.clear(); editDescription.clear(); editCategory.clear(); editAmount.clear();
             editDay.clear(); editMonth.clear(); editYear.clear();
-        } catch (Exception e) {
-            showAlert("Ошибка", "Не удалось обновить: " + e.getMessage());
-            e.printStackTrace();
-        }
+        } catch (Exception e) { showAlert("Ошибка", "Не удалось обновить: " + e.getMessage()); }
     }
 
     private void deleteTransactionByNumber() {
@@ -441,6 +496,119 @@ public class FinanceFXController implements Initializable {
         } catch (Exception e) { showAlert("Ошибка", "Неверный формат даты для графика: " + e.getMessage()); }
     }
 
+    // ------------------------------------------------------------------
+    // Планировщик
+    // ------------------------------------------------------------------
+    private void setupScheduledTable() {
+        colSchedId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colSchedType.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().getType().toString()));
+        colSchedCategory.setCellValueFactory(new PropertyValueFactory<>("category"));
+        colSchedDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
+        colSchedAmount.setCellValueFactory(new PropertyValueFactory<>("amount"));
+        colSchedDay.setCellValueFactory(new PropertyValueFactory<>("dayOfMonth"));
+        colSchedLast.setCellValueFactory(cellData -> {
+            LocalDate d = cellData.getValue().getLastExecuted();
+            return new javafx.beans.property.SimpleStringProperty(d != null ? d.format(dateFormatter) : "");
+        });
+        colSchedDelete.setCellFactory(col -> new TableCell<>() {
+            private final Button delBtn = new Button("Удалить");
+            {
+                delBtn.setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");
+                delBtn.setOnAction(e -> {
+                    RecurringTransaction rt = getTableView().getItems().get(getIndex());
+                    deleteScheduled(rt.getId());
+                });
+            }
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : delBtn);
+            }
+        });
+        scheduledTable.setItems(scheduledList);
+    }
+
+    private void refreshScheduledTable() {
+        scheduledList.setAll(recurringRepo.findAll());
+    }
+
+    private void addScheduledTransaction() {
+        try {
+            String type = schedType.getValue();
+            String category = schedCategory.getText().trim();
+            String description = schedDescription.getText().trim();
+            String amountStr = schedAmount.getText().trim().replace(',', '.');
+            int day = Integer.parseInt(schedDay.getText().trim());
+            if (category.isEmpty() || description.isEmpty() || amountStr.isEmpty()) {
+                showAlert("Ошибка", "Заполните категорию, описание и сумму");
+                return;
+            }
+            if (day < 1 || day > 31) {
+                showAlert("Ошибка", "День месяца должен быть от 1 до 31");
+                return;
+            }
+            BigDecimal amount = new BigDecimal(amountStr);
+            TransactionType ttype = type.equals("ДОХОД") ? TransactionType.INCOME : TransactionType.EXPENSE;
+            RecurringTransaction rt = new RecurringTransaction(ttype, category, description, amount, day, null);
+            recurringRepo.save(rt);
+            refreshScheduledTable();
+            schedCategory.clear(); schedDescription.clear(); schedAmount.clear(); schedDay.clear();
+            showAlert("Успех", "Регулярная операция добавлена");
+        } catch (Exception e) {
+            showAlert("Ошибка", "Неверные данные: " + e.getMessage());
+        }
+    }
+
+    private void deleteScheduled(int id) {
+        recurringRepo.delete(id);
+        refreshScheduledTable();
+        showAlert("Успех", "Регулярная операция удалена");
+    }
+
+    private void processMissedRecurringTransactions() {
+        List<RecurringTransaction> list = recurringRepo.findAll();
+        if (list.isEmpty()) return;
+        LocalDate today = LocalDate.now();
+        boolean anyAdded = false;
+        for (RecurringTransaction rt : list) {
+            LocalDate last = rt.getLastExecuted();
+            // Вычисляем следующую дату выполнения
+            LocalDate nextDate;
+            if (last == null) {
+                // Если никогда не выполнялась: берём текущий месяц, но если число больше сегодняшнего, то следующий месяц
+                try {
+                    nextDate = LocalDate.of(today.getYear(), today.getMonth(), rt.getDayOfMonth());
+                    if (nextDate.isAfter(today)) {
+                        nextDate = nextDate.minusMonths(1); // перейдём на прошлый месяц, потом цикл добавит
+                    }
+                } catch (Exception e) {
+                    // неверная дата (например 31 февраля) – пропускаем
+                    continue;
+                }
+            } else {
+                nextDate = last.plusMonths(1).withDayOfMonth(rt.getDayOfMonth());
+            }
+
+            while (!nextDate.isAfter(today)) {
+                // Добавляем транзакцию
+                Transaction newTx = new Transaction(rt.getAmount(), rt.getType(), rt.getDescription(), rt.getCategory(), nextDate);
+                transactionController.addTransaction(newTx);
+                recurringRepo.updateLastExecuted(rt.getId(), nextDate);
+                anyAdded = true;
+                // Переходим к следующему месяцу
+                nextDate = nextDate.plusMonths(1).withDayOfMonth(rt.getDayOfMonth());
+            }
+        }
+        if (anyAdded) {
+            refreshData();
+            refreshScheduledTable();
+            showAlert("Планировщик", "Добавлены пропущенные регулярные операции");
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Общие утилиты
+    // ------------------------------------------------------------------
     private void showAlert(String title, String msg) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);

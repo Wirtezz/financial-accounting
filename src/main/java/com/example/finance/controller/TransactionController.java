@@ -18,6 +18,9 @@ public class TransactionController {
     public TransactionService getService() {
         return service;
     }
+    public void addTransaction(Transaction t) {
+        service.addTransaction(t);
+    }
 
     public void addIncome(String description, String category, BigDecimal amount, LocalDate date) {
         Transaction t = new Transaction(amount, TransactionType.INCOME, description, category, date);
