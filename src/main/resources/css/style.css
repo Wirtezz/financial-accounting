@@ -158,3 +158,23 @@
     -fx-background-color: #b8c5d4;
     -fx-background-radius: 10px;
 }
+
+
+
+#scheduledTable .column-header .label {
+    -fx-alignment: CENTER-LEFT;
+}
+#scheduledTable .table-cell {
+    -fx-alignment: CENTER-LEFT;
+}
+#colSchedDelete .table-cell {
+    -fx-alignment: CENTER;
+}
+#colSchedDelete .table-cell .button {
+    -fx-alignment: CENTER;
+    -fx-content-display: CENTER;
+}
+#colSchedDelete .table-cell .button .text {
+    -fx-text-alignment: center;
+}
+

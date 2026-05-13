@@ -3,10 +3,10 @@ package com.example.finance.controller;
 import com.example.finance.model.RecurringTransaction;
 import com.example.finance.model.Transaction;
 import com.example.finance.model.TransactionType;
-import com.example.finance.repository.RecurringTransactionRepositoryImpl;
-import com.example.finance.repository.TransactionRepositoryImpl;
-import com.example.finance.service.TransactionServiceImpl;
-import javafx.application.Platform;
+import com.example.finance.repository.RecurringTransactionRepositoryHibernate;
+import com.example.finance.repository.TransactionRepositoryHibernate;
+import com.example.finance.repository.TransactionRepository;
+import com.example.finance.service.TransactionServicelmpl;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -14,10 +14,7 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.chart.CategoryAxis;
-import javafx.scene.chart.LineChart;
-import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.XYChart;
+import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.effect.DropShadow;
@@ -33,8 +30,6 @@ import org.flywaydb.core.Flyway;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -42,7 +37,7 @@ import java.util.stream.Collectors;
 
 public class FinanceFXController implements Initializable {
 
-    // ---------- Основная таблица ----------
+    //Основная таблица
     @FXML private TableView<Transaction> transactionsTable;
     @FXML private TableColumn<Transaction, Integer> colNumber;
     @FXML private TableColumn<Transaction, String> colType;
@@ -86,9 +81,10 @@ public class FinanceFXController implements Initializable {
     @FXML private CategoryAxis xAxis;
     @FXML private NumberAxis yAxis;
 
-    // ---------- Планировщик (регулярные операции) ----------
+    //Планировщик (регулярные операции)
     @FXML private ComboBox<String> schedType;
     @FXML private TextField schedCategory, schedDescription, schedAmount, schedDay;
+    @FXML private ComboBox<Integer> schedMonth;
     @FXML private Button btnAddScheduled;
     @FXML private TableView<RecurringTransaction> scheduledTable;
     @FXML private TableColumn<RecurringTransaction, Integer> colSchedId;
@@ -96,20 +92,31 @@ public class FinanceFXController implements Initializable {
     @FXML private TableColumn<RecurringTransaction, String> colSchedCategory;
     @FXML private TableColumn<RecurringTransaction, String> colSchedDescription;
     @FXML private TableColumn<RecurringTransaction, BigDecimal> colSchedAmount;
-    @FXML private TableColumn<RecurringTransaction, Integer> colSchedDay;
     @FXML private TableColumn<RecurringTransaction, String> colSchedLast;
     @FXML private TableColumn<RecurringTransaction, Void> colSchedDelete;
     @FXML private Label schedInfo;
+    @FXML private ComboBox<String> schedPeriod;
+    @FXML private TableColumn<RecurringTransaction, String> colSchedPeriod;
 
-    // ---------- Внутренние поля ----------
+    // Аналитика (круговая диаграмма)
+    @FXML private TextField analyticsStartDay, analyticsStartMonth, analyticsStartYear;
+    @FXML private TextField analyticsEndDay, analyticsEndMonth, analyticsEndYear;
+    @FXML private Button btnBuildPieChart;
+    @FXML private PieChart pieChart;
+    @FXML private Label pieChartInfo;
+
+    //Внутренние поля
     private TransactionController transactionController;
-    private TransactionRepositoryImpl repository;
-    private RecurringTransactionRepositoryImpl recurringRepo;
+    private TransactionRepository repository;
+    private RecurringTransactionRepositoryHibernate recurringRepo;
     private ObservableList<Transaction> transactionList = FXCollections.observableArrayList();
     private ObservableList<RecurringTransaction> scheduledList = FXCollections.observableArrayList();
     private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private static String currentTheme = "Светлая";
     private Image appIcon;
+
+    // Скрытая колонка для ID (используется только для сортировки)
+    private TableColumn<Transaction, Integer> colRealId;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -131,6 +138,23 @@ public class FinanceFXController implements Initializable {
         setupTable();
         setupThemeButton();
 
+        // Планировщик: периоды
+        schedPeriod.getItems().addAll("Ежемесячно", "Ежегодно");
+        schedPeriod.setValue("Ежемесячно");
+
+        // Инициализация выбора месяца для годовых подписок
+        ObservableList<Integer> months = FXCollections.observableArrayList();
+        for (int i = 1; i <= 12; i++) months.add(i);
+        schedMonth.setItems(months);
+        schedMonth.setValue(LocalDate.now().getMonthValue());
+        schedMonth.setDisable(true);
+
+        // При изменении периода – активируем/деактивируем выбор месяца
+        schedPeriod.valueProperty().addListener((obs, old, val) -> {
+            boolean isYearly = "Ежегодно".equals(val);
+            schedMonth.setDisable(!isYearly);
+        });
+
         // Добавление операции
         cmbType.getItems().addAll("ДОХОД", "РАСХОД");
         cmbType.setValue("ДОХОД");
@@ -147,6 +171,9 @@ public class FinanceFXController implements Initializable {
         // Отчёты
         btnShowReport.setOnAction(e -> showReport());
 
+        // Аналитика – круговая диаграмма
+        btnBuildPieChart.setOnAction(e -> buildPieChart());
+
         // График
         btnBuildChart.setOnAction(e -> buildChart());
 
@@ -155,7 +182,7 @@ public class FinanceFXController implements Initializable {
             if (newVal != null) loadTransactionToEditForm(newVal);
         });
 
-        // ---------- Планировщик ----------
+        // Планировщик
         schedType.getItems().addAll("ДОХОД", "РАСХОД");
         schedType.setValue("ДОХОД");
         btnAddScheduled.setOnAction(e -> addScheduledTransaction());
@@ -175,9 +202,7 @@ public class FinanceFXController implements Initializable {
         processMissedRecurringTransactions();
     }
 
-    // ------------------------------------------------------------------
     // Иконки, окно входа, тема
-    // ------------------------------------------------------------------
     private void setIcon(Stage stage) {
         if (appIcon != null && stage != null) stage.getIcons().add(appIcon);
     }
@@ -287,30 +312,29 @@ public class FinanceFXController implements Initializable {
         scheduledTable.lookupAll(".column-header .label").forEach(node -> node.setStyle("-fx-text-fill: " + textColor + ";"));
     }
 
-    // ------------------------------------------------------------------
-    // Инициализация БД
-    // ------------------------------------------------------------------
+    // Инициализация БД (Hibernate + Flyway)
     private void initDatabase() {
         try {
-            String url = "jdbc:mysql://localhost:3306/finance_db";
-            String user = "root";
-            String password = "Leon63088.";
-            Flyway flyway = Flyway.configure().dataSource(url, user, password).locations("classpath:db/migration").load();
+            Flyway flyway = Flyway.configure()
+                    .dataSource("jdbc:mysql://localhost:3306/finance_db", "root", "Leon63088.")
+                    .locations("classpath:db/migration")
+                    .load();
             flyway.migrate();
-            Connection conn = DriverManager.getConnection(url, user, password);
-            repository = new TransactionRepositoryImpl(conn);
-            recurringRepo = new RecurringTransactionRepositoryImpl(conn);
-            TransactionServiceImpl service = new TransactionServiceImpl(repository);
+
+            repository = new TransactionRepositoryHibernate();
+            recurringRepo = new RecurringTransactionRepositoryHibernate();
+            TransactionServicelmpl service = new TransactionServicelmpl(repository);
             transactionController = new TransactionController(service);
+
         } catch (Exception e) {
             showAlert("Ошибка БД", "Не удалось подключиться: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    // ------------------------------------------------------------------
     // Основные операции (таблица, добавление, редактирование, удаление, отчёты, график)
-    // ------------------------------------------------------------------
     private void setupTable() {
+        // Номер строки (вычисляется динамически)
         colNumber.setCellValueFactory(cellData -> {
             int index = transactionsTable.getItems().indexOf(cellData.getValue()) + 1;
             return new javafx.beans.property.SimpleIntegerProperty(index).asObject();
@@ -319,10 +343,28 @@ public class FinanceFXController implements Initializable {
         colAmount.setCellValueFactory(new PropertyValueFactory<>("amount"));
         colCategory.setCellValueFactory(new PropertyValueFactory<>("category"));
         colDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
-        colDate.setCellValueFactory(cellData -> {
-            LocalDate date = cellData.getValue().getTransactionDate();
-            return new javafx.beans.property.SimpleStringProperty(date != null ? date.format(dateFormatter) : "");
+
+        // ДАТА: строковое представление, но сортировка по LocalDate
+        colDate.setCellValueFactory(cellData ->
+                new javafx.beans.property.SimpleStringProperty(cellData.getValue().getTransactionDate().format(dateFormatter))
+        );
+        colDate.setComparator((dateStr1, dateStr2) -> {
+            try {
+                LocalDate d1 = LocalDate.parse(dateStr1, dateFormatter);
+                LocalDate d2 = LocalDate.parse(dateStr2, dateFormatter);
+                return d1.compareTo(d2);
+            } catch (Exception e) {
+                return 0;
+            }
         });
+
+        // Скрытая колонка ID (для сортировки)
+        colRealId = new TableColumn<>("ID");
+        colRealId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colRealId.setVisible(false);
+        transactionsTable.getColumns().add(0, colRealId);
+
+        // Перенос текста (как было)
         colCategory.setCellFactory(tc -> {
             TableCell<Transaction, String> cell = new TableCell<>();
             javafx.scene.text.Text text = new javafx.scene.text.Text();
@@ -339,9 +381,15 @@ public class FinanceFXController implements Initializable {
             text.textProperty().bind(cell.itemProperty());
             return cell;
         });
+
         transactionsTable.setRowFactory(tv -> { TableRow<Transaction> row = new TableRow<>(); row.setPrefHeight(35); return row; });
         transactionsTable.setItems(transactionList);
         transactionsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        // Сортировка по умолчанию: сначала по дате (убывание), затем по ID (убывание)
+        colDate.setSortType(TableColumn.SortType.DESCENDING);
+        colRealId.setSortType(TableColumn.SortType.DESCENDING);
+        transactionsTable.getSortOrder().addAll(colDate, colRealId);
     }
 
     private void refreshData() {
@@ -370,8 +418,18 @@ public class FinanceFXController implements Initializable {
             int month = Integer.parseInt(txtMonth.getText().trim());
             int year = Integer.parseInt(txtYear.getText().trim());
             LocalDate date = LocalDate.of(year, month, day);
-            if (type.equals("ДОХОД")) transactionController.addIncome(description, category, amount, date);
-            else transactionController.addExpense(description, category, amount, date);
+
+            if (type.equals("РАСХОД")) {
+                BigDecimal currentBalance = transactionController.getService().getBalance();
+                if (amount.compareTo(currentBalance) > 0) {
+                    showAlert("Ошибка", "Недостаточно средств! Расход (" + amount + " руб.) превышает баланс (" + currentBalance + " руб.).");
+                    return;
+                }
+                transactionController.addExpense(description, category, amount, date);
+            } else {
+                transactionController.addIncome(description, category, amount, date);
+            }
+
             txtDescription.clear(); txtCategory.clear(); txtAmount.clear(); txtDay.clear(); txtMonth.clear(); txtYear.clear();
             refreshData();
             showAlert("Успех", "Операция добавлена");
@@ -496,19 +554,36 @@ public class FinanceFXController implements Initializable {
         } catch (Exception e) { showAlert("Ошибка", "Неверный формат даты для графика: " + e.getMessage()); }
     }
 
-    // ------------------------------------------------------------------
-    // Планировщик
-    // ------------------------------------------------------------------
+    // Планировщик (регулярные операции)
     private void setupScheduledTable() {
         colSchedId.setCellValueFactory(new PropertyValueFactory<>("id"));
         colSchedType.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().getType().toString()));
         colSchedCategory.setCellValueFactory(new PropertyValueFactory<>("category"));
         colSchedDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
         colSchedAmount.setCellValueFactory(new PropertyValueFactory<>("amount"));
-        colSchedDay.setCellValueFactory(new PropertyValueFactory<>("dayOfMonth"));
         colSchedLast.setCellValueFactory(cellData -> {
             LocalDate d = cellData.getValue().getLastExecuted();
             return new javafx.beans.property.SimpleStringProperty(d != null ? d.format(dateFormatter) : "");
+        });
+        colSchedCategory.setCellFactory(tc -> {
+            TableCell<RecurringTransaction, String> cell = new TableCell<>();
+            javafx.scene.text.Text text = new javafx.scene.text.Text();
+            cell.setGraphic(text);
+            text.wrappingWidthProperty().bind(cell.widthProperty().subtract(10));
+            text.textProperty().bind(cell.itemProperty());
+            return cell;
+        });
+        colSchedDescription.setCellFactory(tc -> {
+            TableCell<RecurringTransaction, String> cell = new TableCell<>();
+            javafx.scene.text.Text text = new javafx.scene.text.Text();
+            cell.setGraphic(text);
+            text.wrappingWidthProperty().bind(cell.widthProperty().subtract(10));
+            text.textProperty().bind(cell.itemProperty());
+            return cell;
+        });
+        colSchedPeriod.setCellValueFactory(cellData -> {
+            String period = cellData.getValue().getPeriodType();
+            return new javafx.beans.property.SimpleStringProperty("YEARLY".equals(period) ? "Годовая" : "Ежемесячная");
         });
         colSchedDelete.setCellFactory(col -> new TableCell<>() {
             private final Button delBtn = new Button("Удалить");
@@ -516,7 +591,7 @@ public class FinanceFXController implements Initializable {
                 delBtn.setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");
                 delBtn.setOnAction(e -> {
                     RecurringTransaction rt = getTableView().getItems().get(getIndex());
-                    deleteScheduled(rt.getId());
+                    confirmAndDeleteScheduled(rt);
                 });
             }
             @Override
@@ -535,10 +610,12 @@ public class FinanceFXController implements Initializable {
     private void addScheduledTransaction() {
         try {
             String type = schedType.getValue();
+            String period = schedPeriod.getValue();
             String category = schedCategory.getText().trim();
             String description = schedDescription.getText().trim();
             String amountStr = schedAmount.getText().trim().replace(',', '.');
             int day = Integer.parseInt(schedDay.getText().trim());
+
             if (category.isEmpty() || description.isEmpty() || amountStr.isEmpty()) {
                 showAlert("Ошибка", "Заполните категорию, описание и сумму");
                 return;
@@ -547,22 +624,39 @@ public class FinanceFXController implements Initializable {
                 showAlert("Ошибка", "День месяца должен быть от 1 до 31");
                 return;
             }
+
             BigDecimal amount = new BigDecimal(amountStr);
             TransactionType ttype = type.equals("ДОХОД") ? TransactionType.INCOME : TransactionType.EXPENSE;
+
             RecurringTransaction rt = new RecurringTransaction(ttype, category, description, amount, day, null);
+            rt.setPeriodType("Ежегодно".equals(period) ? "YEARLY" : "MONTHLY");
+
+            if ("Ежегодно".equals(period)) {
+                rt.setMonth(schedMonth.getValue());
+            }
+
             recurringRepo.save(rt);
             refreshScheduledTable();
             schedCategory.clear(); schedDescription.clear(); schedAmount.clear(); schedDay.clear();
+            schedMonth.setValue(LocalDate.now().getMonthValue());
             showAlert("Успех", "Регулярная операция добавлена");
         } catch (Exception e) {
             showAlert("Ошибка", "Неверные данные: " + e.getMessage());
         }
     }
 
-    private void deleteScheduled(int id) {
-        recurringRepo.delete(id);
-        refreshScheduledTable();
-        showAlert("Успех", "Регулярная операция удалена");
+    private LocalDate getValidDate(int year, int month, int desiredDay) {
+        while (month < 1) {
+            month += 12;
+            year--;
+        }
+        while (month > 12) {
+            month -= 12;
+            year++;
+        }
+        int lastDayOfMonth = LocalDate.of(year, month, 1).lengthOfMonth();
+        int actualDay = Math.min(desiredDay, lastDayOfMonth);
+        return LocalDate.of(year, month, actualDay);
     }
 
     private void processMissedRecurringTransactions() {
@@ -570,33 +664,43 @@ public class FinanceFXController implements Initializable {
         if (list.isEmpty()) return;
         LocalDate today = LocalDate.now();
         boolean anyAdded = false;
+        boolean anySkipped = false;
         for (RecurringTransaction rt : list) {
             LocalDate last = rt.getLastExecuted();
-            // Вычисляем следующую дату выполнения
             LocalDate nextDate;
             if (last == null) {
-                // Если никогда не выполнялась: берём текущий месяц, но если число больше сегодняшнего, то следующий месяц
-                try {
-                    nextDate = LocalDate.of(today.getYear(), today.getMonth(), rt.getDayOfMonth());
-                    if (nextDate.isAfter(today)) {
-                        nextDate = nextDate.minusMonths(1); // перейдём на прошлый месяц, потом цикл добавит
-                    }
-                } catch (Exception e) {
-                    // неверная дата (например 31 февраля) – пропускаем
-                    continue;
+                nextDate = getValidDate(today.getYear(), today.getMonthValue(), rt.getDayOfMonth());
+                if (nextDate.isAfter(today)) {
+                    nextDate = getValidDate(today.getYear(), today.getMonthValue() - 1, rt.getDayOfMonth());
                 }
             } else {
-                nextDate = last.plusMonths(1).withDayOfMonth(rt.getDayOfMonth());
+                if ("YEARLY".equals(rt.getPeriodType())) {
+                    int monthValue = rt.getMonth();
+                    int month = monthValue > 0 ? monthValue : 1;
+                    nextDate = getValidDate(last.getYear() + 1, month, rt.getDayOfMonth());
+                } else {
+                    nextDate = getValidDate(last.getYear(), last.getMonthValue() + 1, rt.getDayOfMonth());
+                }
             }
 
-            while (!nextDate.isAfter(today)) {
-                // Добавляем транзакцию
+            while (nextDate != null && !nextDate.isAfter(today)) {
+                if (rt.getType() == TransactionType.EXPENSE) {
+                    BigDecimal currentBalance = transactionController.getService().getBalance();
+                    if (rt.getAmount().compareTo(currentBalance) > 0) {
+                        anySkipped = true;
+                        System.out.println("Недостаточно средств для подписки " + rt.getDescription() + ". Пропущено.");
+                        break;
+                    }
+                }
                 Transaction newTx = new Transaction(rt.getAmount(), rt.getType(), rt.getDescription(), rt.getCategory(), nextDate);
                 transactionController.addTransaction(newTx);
                 recurringRepo.updateLastExecuted(rt.getId(), nextDate);
                 anyAdded = true;
-                // Переходим к следующему месяцу
-                nextDate = nextDate.plusMonths(1).withDayOfMonth(rt.getDayOfMonth());
+                if ("YEARLY".equals(rt.getPeriodType())) {
+                    nextDate = getValidDate(nextDate.getYear() + 1, nextDate.getMonthValue(), rt.getDayOfMonth());
+                } else {
+                    nextDate = getValidDate(nextDate.getYear(), nextDate.getMonthValue() + 1, rt.getDayOfMonth());
+                }
             }
         }
         if (anyAdded) {
@@ -604,11 +708,117 @@ public class FinanceFXController implements Initializable {
             refreshScheduledTable();
             showAlert("Планировщик", "Добавлены пропущенные регулярные операции");
         }
+        if (anySkipped) {
+            showAlert("Планировщик", "Некоторые регулярные расходы не были добавлены из-за недостатка средств.\nПополните баланс, и они добавятся автоматически позже.");
+        }
     }
 
-    // ------------------------------------------------------------------
-    // Общие утилиты
-    // ------------------------------------------------------------------
+    private void buildPieChart() {
+        try {
+            LocalDate start = LocalDate.of(
+                    Integer.parseInt(analyticsStartYear.getText()),
+                    Integer.parseInt(analyticsStartMonth.getText()),
+                    Integer.parseInt(analyticsStartDay.getText()));
+            LocalDate end = LocalDate.of(
+                    Integer.parseInt(analyticsEndYear.getText()),
+                    Integer.parseInt(analyticsEndMonth.getText()),
+                    Integer.parseInt(analyticsEndDay.getText()));
+
+            List<Transaction> expenses = transactionController.getService().getTransactionsByTypeAndPeriod("EXPENSE", start, end);
+
+            if (expenses.isEmpty()) {
+                pieChart.getData().clear();
+                pieChartInfo.setText("Нет расходов за выбранный период");
+                return;
+            }
+
+            Map<String, Double> categorySum = new LinkedHashMap<>();
+            double total = 0;
+            for (Transaction t : expenses) {
+                String cat = t.getCategory().trim();
+                double amount = t.getAmount().doubleValue();
+                categorySum.merge(cat, amount, Double::sum);
+                total += amount;
+            }
+
+            ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
+            for (Map.Entry<String, Double> entry : categorySum.entrySet()) {
+                double percent = (entry.getValue() / total) * 100;
+                String label = String.format("%s (%.2f руб. – %.1f%%)", entry.getKey(), entry.getValue(), percent);
+                pieData.add(new PieChart.Data(label, entry.getValue()));
+            }
+
+            pieChart.setData(pieData);
+            pieChart.setTitle("Расходы по категориям за " + start.format(dateFormatter) + " - " + end.format(dateFormatter));
+            pieChartInfo.setText("Всего расходов: " + expenses.size() + " операций на сумму " + total + " руб.");
+
+        } catch (Exception e) {
+            showAlert("Ошибка", "Неверный формат даты для диаграммы: " + e.getMessage());
+        }
+    }
+
+    private void confirmAndDeleteScheduled(RecurringTransaction rt) {
+        LocalDate endDate = null;
+        LocalDate today = LocalDate.now();
+        if (rt.getLastExecuted() != null) {
+            if ("YEARLY".equals(rt.getPeriodType())) {
+                endDate = rt.getLastExecuted().plusYears(1);
+            } else {
+                endDate = rt.getLastExecuted().plusMonths(1);
+            }
+            while (endDate != null && endDate.isBefore(today)) {
+                if ("YEARLY".equals(rt.getPeriodType())) {
+                    endDate = endDate.plusYears(1);
+                } else {
+                    endDate = endDate.plusMonths(1);
+                }
+            }
+        } else {
+            if ("YEARLY".equals(rt.getPeriodType())) {
+                endDate = today.plusYears(1);
+            } else {
+                endDate = today.plusMonths(1);
+            }
+        }
+
+        String endDateStr = endDate != null ? endDate.format(dateFormatter) : "не определена";
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Подтверждение удаления");
+        confirm.setHeaderText("Удалить подписку?");
+        confirm.setContentText(
+                "Подписка: " + rt.getDescription() + "\n" +
+                        "Категория: " + rt.getCategory() + "\n" +
+                        "Сумма: " + rt.getAmount() + " руб.\n" +
+                        "Период: " + ("YEARLY".equals(rt.getPeriodType()) ? "Годовая" : "Ежемесячная") + "\n" +
+                        "Последний платёж: " + (rt.getLastExecuted() != null ? rt.getLastExecuted().format(dateFormatter) : "ещё не было") + "\n\n" +
+                        "После удаления подписка больше не будет продлеваться.\n" +
+                        "Текущий оплаченный период действует до " + endDateStr + "."
+        );
+        ButtonType yes = new ButtonType("Да, удалить", ButtonBar.ButtonData.YES);
+        ButtonType no = new ButtonType("Нет", ButtonBar.ButtonData.NO);
+        confirm.getButtonTypes().setAll(yes, no);
+        setIconToDialog(confirm);
+
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isPresent() && result.get() == yes) {
+            recurringRepo.delete(rt.getId());
+            refreshScheduledTable();
+            refreshData();
+
+            Alert info = new Alert(Alert.AlertType.INFORMATION);
+            info.setTitle("Подписка удалена");
+            info.setHeaderText(null);
+            info.setContentText(
+                    "Подписка \"" + rt.getDescription() + "\" удалена.\n" +
+                            "Однако она будет активна до " + endDateStr + " (оплаченный период).\n" +
+                            "Новых списаний не будет."
+            );
+            setIconToDialog(info);
+            info.showAndWait();
+        }
+    }
+
     private void showAlert(String title, String msg) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);

@@ -1,0 +1,1 @@
+ALTER TABLE recurring_transactions MODIFY COLUMN type VARCHAR(10) NOT NULL;

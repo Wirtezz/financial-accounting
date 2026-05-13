@@ -1,4 +1,4 @@
-package com.example.finance.repository;
+/*package com.example.finance.repository;
 
 import com.example.finance.model.Transaction;
 import com.example.finance.model.TransactionType;
@@ -184,4 +184,4 @@ public class TransactionRepositoryImpl implements TransactionRepository {
         t.setTransactionDate(rs.getDate("transaction_date").toLocalDate());
         return t;
     }
-}
+}*/

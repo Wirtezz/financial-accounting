@@ -10,13 +10,12 @@ public interface TransactionService {
     void addTransaction(Transaction transaction);
     List<Transaction> getAllTransactions();
     void deleteTransaction(int id);
-
+    void updateTransaction(Transaction transaction);
     BigDecimal getTotalIncome();
     BigDecimal getTotalExpense();
     BigDecimal getBalance();
-
-    BigDecimal getTotalIncomeByPeriod(LocalDate startDate, LocalDate endDate);
-    BigDecimal getTotalExpenseByPeriod(LocalDate startDate, LocalDate endDate);
-    List<Transaction> getTransactionsByPeriod(LocalDate startDate, LocalDate endDate);
-    List<Transaction> getTransactionsByTypeAndPeriod(String type, LocalDate startDate, LocalDate endDate);
+    BigDecimal getTotalIncomeByPeriod(LocalDate start, LocalDate end);
+    BigDecimal getTotalExpenseByPeriod(LocalDate start, LocalDate end);
+    List<Transaction> getTransactionsByPeriod(LocalDate start, LocalDate end);
+    List<Transaction> getTransactionsByTypeAndPeriod(String type, LocalDate start, LocalDate end);
 }

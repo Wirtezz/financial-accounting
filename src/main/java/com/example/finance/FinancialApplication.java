@@ -1,4 +1,4 @@
-package com.example.finance;
+/*package com.example.finance;
 
 import com.example.finance.controller.TransactionController;
 import com.example.finance.repository.TransactionRepositoryImpl;
@@ -30,8 +30,8 @@ public class FinancialApplication {
 
         try (Connection conn = DriverManager.getConnection(url, user, password)) {
             TransactionRepositoryImpl repo = new TransactionRepositoryImpl(conn);
-            TransactionServiceImpl service = new TransactionServiceImpl(repo);
-            controller = new TransactionController(service);
+        //    TransactionServiceImpl service = new TransactionServiceImpl(repo);
+            //controller = new TransactionController(service);
 
             runMenu();
 
@@ -81,9 +81,9 @@ public class FinancialApplication {
     }
 
     private static void printMenu() {
-        System.out.println("\n=========================================");
+        System.out.println("\n-------------------------------------------");
         System.out.println("ГЛАВНОЕ МЕНЮ");
-        System.out.println("=========================================");
+        System.out.println("-------------------------------------------");
         System.out.println("1. Добавить ДОХОД");
         System.out.println("2. Добавить РАСХОД");
         System.out.println("3. Показать ВСЕ операции");
@@ -92,7 +92,7 @@ public class FinancialApplication {
         System.out.println("6. Отчет за ДЕНЬ");
         System.out.println("7. Отчет за ПЕРИОД");
         System.out.println("8. ВЫХОД");
-        System.out.println("=========================================");
+        System.out.println("-------------------------------------------");
     }
 
     private static LocalDate readDateFromInput() {
@@ -177,4 +177,4 @@ public class FinancialApplication {
         LocalDate endDate = readDateFromInput();
         controller.showReportByPeriod(startDate, endDate);
     }
-}
+}*/

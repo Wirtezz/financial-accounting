@@ -1,17 +1,21 @@
 package com.example.finance.service;
 
 import com.example.finance.model.Transaction;
-import com.example.finance.model.TransactionType;
 import com.example.finance.repository.TransactionRepository;
+import com.example.finance.repository.TransactionRepositoryHibernate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-public class TransactionServiceImpl implements TransactionService {
+public class TransactionServicelmpl implements TransactionService {
     private final TransactionRepository repository;
 
-    public TransactionServiceImpl(TransactionRepository repository) {
+    public TransactionServicelmpl() {
+        this.repository = new TransactionRepositoryHibernate();
+    }
+
+    public TransactionServicelmpl(TransactionRepository repository) {
         this.repository = repository;
     }
 
@@ -21,7 +25,6 @@ public class TransactionServiceImpl implements TransactionService {
             throw new IllegalArgumentException("Сумма должна быть больше 0");
         }
         repository.save(transaction);
-        System.out.println("Операция добавлена");
     }
 
     @Override
@@ -32,6 +35,11 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public void deleteTransaction(int id) {
         repository.delete(id);
+    }
+
+    @Override
+    public void updateTransaction(Transaction transaction) {
+        repository.updateTransaction(transaction);   // ← updateTransaction
     }
 
     @Override
@@ -50,22 +58,22 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public BigDecimal getTotalIncomeByPeriod(LocalDate startDate, LocalDate endDate) {
-        return repository.getTotalIncomeByPeriod(startDate, endDate);
+    public BigDecimal getTotalIncomeByPeriod(LocalDate start, LocalDate end) {
+        return repository.getTotalIncomeByPeriod(start, end);
     }
 
     @Override
-    public BigDecimal getTotalExpenseByPeriod(LocalDate startDate, LocalDate endDate) {
-        return repository.getTotalExpenseByPeriod(startDate, endDate);
+    public BigDecimal getTotalExpenseByPeriod(LocalDate start, LocalDate end) {
+        return repository.getTotalExpenseByPeriod(start, end);
     }
 
     @Override
-    public List<Transaction> getTransactionsByPeriod(LocalDate startDate, LocalDate endDate) {
-        return repository.findByPeriod(startDate, endDate);
+    public List<Transaction> getTransactionsByPeriod(LocalDate start, LocalDate end) {
+        return repository.findByPeriod(start, end);
     }
 
     @Override
-    public List<Transaction> getTransactionsByTypeAndPeriod(String type, LocalDate startDate, LocalDate endDate) {
-        return repository.findByTypeAndPeriod(type, startDate, endDate);
+    public List<Transaction> getTransactionsByTypeAndPeriod(String type, LocalDate start, LocalDate end) {
+        return repository.findByTypeAndPeriod(type, start, end);
     }
 }

@@ -4,222 +4,332 @@
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.LineChart?>
 <?import javafx.scene.chart.NumberAxis?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
 
-<VBox spacing="15" alignment="TOP_CENTER" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.finance.controller.FinanceFXController">
-    <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+<?import javafx.scene.chart.PieChart?>
+<VBox alignment="TOP_CENTER" spacing="15" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.finance.controller.FinanceFXController">
+    <padding><Insets bottom="15" left="15" right="15" top="15" /></padding>
 
-    <Label text="СИСТЕМА УЧЕТА ФИНАНСОВ" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" alignment="CENTER" maxWidth="Infinity"/>
+    <Label alignment="CENTER" maxWidth="Infinity" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="СИСТЕМА УЧЕТА ФИНАНСОВ" />
     <HBox alignment="CENTER_RIGHT" spacing="10">
         <Region HBox.hgrow="ALWAYS" />
-        <Button fx:id="btnTheme" text="Тема" style="-fx-background-color: #6c757d; -fx-text-fill: white; -fx-font-weight: bold;"/>
+        <Button fx:id="btnTheme" style="-fx-background-color: #6c757d; -fx-text-fill: white; -fx-font-weight: bold;" text="Тема" />
     </HBox>
 
     <TabPane fx:id="mainTabPane">
-        <Tab text="Все операции" closable="false">
+        <Tab closable="false" text="Все операции">
             <VBox spacing="10">
-                <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
-                <Label text="Список всех операций"/>
+                <padding><Insets bottom="10" left="10" right="10" top="10" /></padding>
+                <Label text="Список всех операций" />
                 <TableView fx:id="transactionsTable" prefHeight="350">
                     <columns>
-                        <TableColumn fx:id="colNumber" text="№" prefWidth="70" resizable="true"/>
-                        <TableColumn fx:id="colType" text="Тип" prefWidth="120" resizable="true"/>
-                        <TableColumn fx:id="colAmount" text="Сумма" prefWidth="150" resizable="true"/>
-                        <TableColumn fx:id="colCategory" text="Категория" prefWidth="200" resizable="true"/>
-                        <TableColumn fx:id="colDescription" text="Описание" prefWidth="300" resizable="true"/>
-                        <TableColumn fx:id="colDate" text="Дата" prefWidth="130" resizable="true"/>
+                        <TableColumn fx:id="colNumber" text="№" prefWidth="70" minWidth="50" maxWidth="80"/>
+                        <TableColumn fx:id="colType" text="Тип" prefWidth="120" minWidth="100" maxWidth="150"/>
+                        <TableColumn fx:id="colAmount" text="Сумма" prefWidth="150" minWidth="120" maxWidth="200"/>
+                        <TableColumn fx:id="colCategory" text="Категория" prefWidth="200" minWidth="150" maxWidth="300"/>
+                        <TableColumn fx:id="colDescription" text="Описание" prefWidth="300" minWidth="200" maxWidth="500"/>
+                        <TableColumn fx:id="colDate" text="Дата" prefWidth="130" minWidth="100" maxWidth="180"/>
                     </columns>
                 </TableView>
             </VBox>
         </Tab>
 
-        <Tab text="Добавить операцию" closable="false">
+        <Tab closable="false" text="Добавить операцию">
             <VBox spacing="15">
-                <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
-                <Label text="Добавление новой операции" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+                <padding><Insets bottom="15" left="15" right="15" top="15" /></padding>
+                <Label style="-fx-font-weight: bold; -fx-font-size: 14px;" text="Добавление новой операции" />
                 <GridPane hgap="10" vgap="10">
-                    <Label text="Тип:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                    <ComboBox fx:id="cmbType" GridPane.rowIndex="0" GridPane.columnIndex="1" prefWidth="200"/>
+                    <Label text="Тип:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                    <ComboBox fx:id="cmbType" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
-                    <Label text="Описание:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                    <TextField fx:id="txtDescription" GridPane.rowIndex="1" GridPane.columnIndex="1" prefWidth="400"/>
+                    <Label text="Описание:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                    <TextField fx:id="txtDescription" prefWidth="400" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-                    <Label text="Категория:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-                    <TextField fx:id="txtCategory" GridPane.rowIndex="2" GridPane.columnIndex="1" prefWidth="300"/>
+                    <Label text="Категория:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                    <TextField fx:id="txtCategory" prefWidth="300" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
-                    <Label text="Сумма (руб):" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
-                    <TextField fx:id="txtAmount" GridPane.rowIndex="3" GridPane.columnIndex="1" prefWidth="200"/>
+                    <Label text="Сумма(руб):" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                    <TextField fx:id="txtAmount" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="3" />
 
-                    <Label text="Дата:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
-                    <HBox spacing="10" GridPane.rowIndex="4" GridPane.columnIndex="1">
-                        <TextField fx:id="txtDay" promptText="День" prefWidth="80"/>
-                        <Label text="."/>
-                        <TextField fx:id="txtMonth" promptText="Месяц" prefWidth="80"/>
-                        <Label text="."/>
-                        <TextField fx:id="txtYear" promptText="Год" prefWidth="120"/>
+                    <Label text="Дата:" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+                    <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                        <TextField fx:id="txtDay" prefWidth="80" promptText="День" />
+                        <Label text="." />
+                        <TextField fx:id="txtMonth" prefWidth="80" promptText="Месяц" />
+                        <Label text="." />
+                        <TextField fx:id="txtYear" prefWidth="120" promptText="Год" />
                     </HBox>
 
-                    <Button fx:id="btnAdd" text="ДОБАВИТЬ" GridPane.rowIndex="5" GridPane.columnIndex="1" prefWidth="150" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                    <Button fx:id="btnAdd" prefWidth="150" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;" text="ДОБАВИТЬ" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+               <columnConstraints>
+                  <ColumnConstraints />
+                  <ColumnConstraints />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+               </rowConstraints>
                 </GridPane>
             </VBox>
         </Tab>
 
-        <Tab text="Изменить" closable="false">
+        <Tab closable="false" text="Изменить">
             <VBox spacing="15">
-                <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
-                <Label text="Редактирование выбранной операции" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
-                <Label text="(Кликните на любую строку в таблице «Все операции» для загрузки данных)" style="-fx-font-style: italic; -fx-text-fill: gray;"/>
+                <padding><Insets bottom="15" left="15" right="15" top="15" /></padding>
+                <Label style="-fx-font-weight: bold; -fx-font-size: 14px;" text="Редактирование выбранной операции" />
+                <Label style="-fx-font-style: italic; -fx-text-fill: gray;" text="(Кликните на любую строку в таблице «Все операции» для загрузки данных)" />
 
                 <GridPane hgap="10" vgap="10">
-                    <Label text="ID (не редактируется):" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                    <TextField fx:id="editId" editable="false" GridPane.rowIndex="0" GridPane.columnIndex="1" prefWidth="100"/>
+                    <Label text="ID (не редактируется):" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                    <TextField fx:id="editId" editable="false" prefWidth="100" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
-                    <Label text="Тип:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                    <ComboBox fx:id="editType" GridPane.rowIndex="1" GridPane.columnIndex="1" prefWidth="200"/>
+                    <Label text="Тип:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                    <ComboBox fx:id="editType" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-                    <Label text="Описание:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-                    <TextField fx:id="editDescription" GridPane.rowIndex="2" GridPane.columnIndex="1" prefWidth="400"/>
+                    <Label text="Описание:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                    <TextField fx:id="editDescription" prefWidth="400" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
-                    <Label text="Категория:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
-                    <TextField fx:id="editCategory" GridPane.rowIndex="3" GridPane.columnIndex="1" prefWidth="300"/>
+                    <Label text="Категория:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                    <TextField fx:id="editCategory" prefWidth="300" GridPane.columnIndex="1" GridPane.rowIndex="3" />
 
-                    <Label text="Сумма (руб):" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
-                    <TextField fx:id="editAmount" GridPane.rowIndex="4" GridPane.columnIndex="1" prefWidth="200"/>
+                    <Label text="Сумма (руб):" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+                    <TextField fx:id="editAmount" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="4" />
 
-                    <Label text="Дата:" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
-                    <HBox spacing="10" GridPane.rowIndex="5" GridPane.columnIndex="1">
-                        <TextField fx:id="editDay" promptText="День" prefWidth="80"/>
-                        <Label text="."/>
-                        <TextField fx:id="editMonth" promptText="Месяц" prefWidth="80"/>
-                        <Label text="."/>
-                        <TextField fx:id="editYear" promptText="Год" prefWidth="120"/>
+                    <Label text="Дата:" GridPane.columnIndex="0" GridPane.rowIndex="5" />
+                    <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="5">
+                        <TextField fx:id="editDay" prefWidth="80" promptText="День" />
+                        <Label text="." />
+                        <TextField fx:id="editMonth" prefWidth="80" promptText="Месяц" />
+                        <Label text="." />
+                        <TextField fx:id="editYear" prefWidth="120" promptText="Год" />
                     </HBox>
 
-                    <Button fx:id="btnUpdate" text="СОХРАНИТЬ ИЗМЕНЕНИЯ" GridPane.rowIndex="6" GridPane.columnIndex="1" prefWidth="200" style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                    <Button fx:id="btnUpdate" prefWidth="200" style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;" text="СОХРАНИТЬ ИЗМЕНЕНИЯ" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+               <columnConstraints>
+                  <ColumnConstraints />
+                  <ColumnConstraints />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+               </rowConstraints>
                 </GridPane>
             </VBox>
         </Tab>
 
-        <Tab text="Отчеты" closable="false">
+        <Tab closable="false" text="Отчеты">
             <VBox spacing="15">
-                <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
-                <Label text="Отчет за период" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+                <padding><Insets bottom="15" left="15" right="15" top="15" /></padding>
+                <Label style="-fx-font-weight: bold; -fx-font-size: 14px;" text="Отчет за период" />
                 <GridPane hgap="15" vgap="15">
-                    <Label text="Начальная дата:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                    <HBox spacing="10" GridPane.rowIndex="0" GridPane.columnIndex="1">
-                        <TextField fx:id="txtStartDay" promptText="День" prefWidth="80"/>
-                        <Label text="."/>
-                        <TextField fx:id="txtStartMonth" promptText="Месяц" prefWidth="80"/>
-                        <Label text="."/>
-                        <TextField fx:id="txtStartYear" promptText="Год" prefWidth="120"/>
+                    <Label text="Начальная дата:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                    <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                        <TextField fx:id="txtStartDay" prefWidth="80" promptText="День" />
+                        <Label text="." />
+                        <TextField fx:id="txtStartMonth" prefWidth="80" promptText="Месяц" />
+                        <Label text="." />
+                        <TextField fx:id="txtStartYear" prefWidth="120" promptText="Год" />
                     </HBox>
 
-                    <Label text="Конечная дата:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                    <HBox spacing="10" GridPane.rowIndex="1" GridPane.columnIndex="1">
-                        <TextField fx:id="txtEndDay" promptText="День" prefWidth="80"/>
-                        <Label text="."/>
-                        <TextField fx:id="txtEndMonth" promptText="Месяц" prefWidth="80"/>
-                        <Label text="."/>
-                        <TextField fx:id="txtEndYear" promptText="Год" prefWidth="120"/>
+                    <Label text="Конечная дата:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                    <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                        <TextField fx:id="txtEndDay" prefWidth="80" promptText="День" />
+                        <Label text="." />
+                        <TextField fx:id="txtEndMonth" prefWidth="80" promptText="Месяц" />
+                        <Label text="." />
+                        <TextField fx:id="txtEndYear" prefWidth="120" promptText="Год" />
                     </HBox>
 
-                    <Button fx:id="btnShowReport" text="ПОКАЗАТЬ ОТЧЕТ" GridPane.rowIndex="2" GridPane.columnIndex="1" prefWidth="200" style="-fx-background-color: #FF9800; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                    <Button fx:id="btnShowReport" prefWidth="200" style="-fx-background-color: #FF9800; -fx-text-fill: white; -fx-font-weight: bold;" text="ПОКАЗАТЬ ОТЧЕТ" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+               <columnConstraints>
+                  <ColumnConstraints />
+                  <ColumnConstraints />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+               </rowConstraints>
                 </GridPane>
 
-                <Label text="Результат отчета:" style="-fx-font-weight: bold;"/>
-                <TextArea fx:id="reportArea" editable="false" wrapText="true" prefHeight="300"/>
+                <Label style="-fx-font-weight: bold;" text="Результат отчета:" />
+                <TextArea fx:id="reportArea" editable="false" prefHeight="300" wrapText="true" />
             </VBox>
         </Tab>
 
-        <Tab text="Удалить" closable="false">
-            <VBox spacing="15" alignment="CENTER">
-                <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-                <Label text="Удаление операции по номеру строки (№)" style="-fx-font-weight: bold;"/>
-                <HBox spacing="15" alignment="CENTER">
-                    <Label text="Введите номер №:"/>
-                    <TextField fx:id="txtDeleteId" prefWidth="150" promptText="Например: 1"/>
-                    <Button fx:id="btnDelete" text="УДАЛИТЬ" prefWidth="120" style="-fx-background-color: #f44336; -fx-text-fill: white; -fx-font-weight: bold;"/>
+        <Tab closable="false" text="Удалить">
+            <VBox alignment="CENTER" spacing="15">
+                <padding><Insets bottom="20" left="20" right="20" top="20" /></padding>
+                <Label style="-fx-font-weight: bold;" text="Удаление операции по номеру строки (№)" />
+                <HBox alignment="CENTER" spacing="15">
+                    <Label text="Введите номер №:" />
+                    <TextField fx:id="txtDeleteId" prefWidth="150" promptText="Например: 1" />
+                    <Button fx:id="btnDelete" prefWidth="120" style="-fx-background-color: #f44336; -fx-text-fill: white; -fx-font-weight: bold;" text="УДАЛИТЬ" />
                 </HBox>
-                <Label fx:id="lblDeleteStatus" style="-fx-text-fill: gray;"/>
+                <Label fx:id="lblDeleteStatus" style="-fx-text-fill: gray;" />
             </VBox>
         </Tab>
 
-        <Tab text="График" closable="false">
+        <Tab text="Аналитика" closable="false">
             <VBox spacing="15">
                 <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
-                <Label text="Динамика накопленного баланса" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+                <Label text="Распределение расходов по категориям" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+
                 <GridPane hgap="15" vgap="15">
                     <Label text="Начальная дата:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
                     <HBox spacing="10" GridPane.rowIndex="0" GridPane.columnIndex="1">
-                        <TextField fx:id="chartStartDay" promptText="День" prefWidth="80"/>
+                        <TextField fx:id="analyticsStartDay" promptText="День" prefWidth="80"/>
                         <Label text="."/>
-                        <TextField fx:id="chartStartMonth" promptText="Месяц" prefWidth="80"/>
+                        <TextField fx:id="analyticsStartMonth" promptText="Месяц" prefWidth="80"/>
                         <Label text="."/>
-                        <TextField fx:id="chartStartYear" promptText="Год" prefWidth="120"/>
+                        <TextField fx:id="analyticsStartYear" promptText="Год" prefWidth="120"/>
                     </HBox>
 
                     <Label text="Конечная дата:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
                     <HBox spacing="10" GridPane.rowIndex="1" GridPane.columnIndex="1">
-                        <TextField fx:id="chartEndDay" promptText="День" prefWidth="80"/>
+                        <TextField fx:id="analyticsEndDay" promptText="День" prefWidth="80"/>
                         <Label text="."/>
-                        <TextField fx:id="chartEndMonth" promptText="Месяц" prefWidth="80"/>
+                        <TextField fx:id="analyticsEndMonth" promptText="Месяц" prefWidth="80"/>
                         <Label text="."/>
-                        <TextField fx:id="chartEndYear" promptText="Год" prefWidth="120"/>
+                        <TextField fx:id="analyticsEndYear" promptText="Год" prefWidth="120"/>
                     </HBox>
 
-                    <Button fx:id="btnBuildChart" text="ПОСТРОИТЬ ГРАФИК" GridPane.rowIndex="2" GridPane.columnIndex="1" prefWidth="200" style="-fx-background-color: #9C27B0; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                    <Button fx:id="btnBuildPieChart" text="ПОСТРОИТЬ ДИАГРАММУ" GridPane.rowIndex="2" GridPane.columnIndex="1"
+                            prefWidth="220" style="-fx-background-color: #9C27B0; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                </GridPane>
+
+                <!-- Круговая диаграмма -->
+                <PieChart fx:id="pieChart" title="Расходы по категориям" VBox.vgrow="ALWAYS" prefHeight="400"/>
+
+                <Label fx:id="pieChartInfo" style="-fx-text-fill: gray; -fx-font-style: italic;"/>
+            </VBox>
+        </Tab>
+
+        <Tab closable="false" text="График">
+            <VBox spacing="15">
+                <padding><Insets bottom="15" left="15" right="15" top="15" /></padding>
+                <Label style="-fx-font-weight: bold; -fx-font-size: 14px;" text="Динамика накопленного баланса" />
+                <GridPane hgap="15" vgap="15">
+                    <Label text="Начальная дата:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                    <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                        <TextField fx:id="chartStartDay" prefWidth="80" promptText="День" />
+                        <Label text="." />
+                        <TextField fx:id="chartStartMonth" prefWidth="80" promptText="Месяц" />
+                        <Label text="." />
+                        <TextField fx:id="chartStartYear" prefWidth="120" promptText="Год" />
+                    </HBox>
+
+                    <Label text="Конечная дата:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                    <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                        <TextField fx:id="chartEndDay" prefWidth="80" promptText="День" />
+                        <Label text="." />
+                        <TextField fx:id="chartEndMonth" prefWidth="80" promptText="Месяц" />
+                        <Label text="." />
+                        <TextField fx:id="chartEndYear" prefWidth="120" promptText="Год" />
+                    </HBox>
+
+                    <Button fx:id="btnBuildChart" prefWidth="200" style="-fx-background-color: #9C27B0; -fx-text-fill: white; -fx-font-weight: bold;" text="ПОСТРОИТЬ ГРАФИК" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+               <columnConstraints>
+                  <ColumnConstraints />
+                  <ColumnConstraints />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+               </rowConstraints>
                 </GridPane>
 
                 <LineChart fx:id="financeChart" title="Накопленный баланс" VBox.vgrow="ALWAYS">
                     <xAxis>
-                        <CategoryAxis label="Дата" fx:id="xAxis"/>
+                        <CategoryAxis label="Дата" fx:id="xAxis" />
                     </xAxis>
                     <yAxis>
-                        <NumberAxis label="Баланс (руб.)" fx:id="yAxis"/>
+                        <NumberAxis fx:id="yAxis" label="Баланс (руб.)" />
                     </yAxis>
                 </LineChart>
             </VBox>
         </Tab>
 
+        <!-- Вкладка: Планировщик (регулярные платежи) -->
+        <!-- Вкладка: Планировщик (регулярные платежи) -->
         <Tab text="Планировщик" closable="false">
             <VBox spacing="15">
                 <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+                <Label text="Регулярные платежи" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
 
-                <Label text="Регулярные ежемесячные платежи" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
-
-                <!-- Панель добавления -->
+                <!-- Строка 1: Тип, Период, Категория -->
                 <GridPane hgap="10" vgap="10">
                     <Label text="Тип:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
                     <ComboBox fx:id="schedType" prefWidth="120" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
 
-                    <Label text="Категория:" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
-                    <TextField fx:id="schedCategory" prefWidth="150" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+                    <Label text="Период:" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                    <ComboBox fx:id="schedPeriod" prefWidth="140" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
 
-                    <Label text="Описание:" GridPane.rowIndex="0" GridPane.columnIndex="4"/>
-                    <TextField fx:id="schedDescription" prefWidth="200" GridPane.rowIndex="0" GridPane.columnIndex="5"/>
-
-                    <Label text="Сумма:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                    <TextField fx:id="schedAmount" prefWidth="120" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-
-                    <Label text="День месяца:" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
-                    <TextField fx:id="schedDay" prefWidth="80" GridPane.rowIndex="1" GridPane.columnIndex="3"/>
-
-                    <Button fx:id="btnAddScheduled" text="ДОБАВИТЬ" GridPane.rowIndex="1" GridPane.columnIndex="5"
-                            prefWidth="120" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                    <Label text="Категория:" GridPane.rowIndex="0" GridPane.columnIndex="4"/>
+                    <TextField fx:id="schedCategory" prefWidth="200" GridPane.rowIndex="0" GridPane.columnIndex="5"/>
                 </GridPane>
 
-                <!-- Таблица регулярных операций -->
+                <!-- Строка 2: Описание, Сумма -->
+                <GridPane hgap="10" vgap="10">
+                    <Label text="Описание:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <TextField fx:id="schedDescription" prefWidth="300" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                    <Label text="Сумма:" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                    <TextField fx:id="schedAmount" prefWidth="120" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+                </GridPane>
+
+                <!-- Строка 3: День месяца, Месяц (для годовых) -->
+                <GridPane hgap="10" vgap="10">
+                    <Label text="День месяца:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <TextField fx:id="schedDay" prefWidth="100" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                    <Label text="Месяц (для годовых):" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                    <ComboBox fx:id="schedMonth" prefWidth="140" GridPane.rowIndex="0" GridPane.columnIndex="3" disable="true"/>
+                </GridPane>
+
+                <!-- Строка 4: Кнопка Добавить -->
+                <HBox alignment="CENTER_RIGHT">
+                    <Button fx:id="btnAddScheduled" text="ДОБАВИТЬ" prefWidth="140" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                </HBox>
+
+                <!-- Таблица с фиксированной шириной колонок -->
                 <TableView fx:id="scheduledTable" prefHeight="250" VBox.vgrow="ALWAYS">
+                    <columnResizePolicy>
+                        <TableView fx:constant="UNCONSTRAINED_RESIZE_POLICY"/>
+                    </columnResizePolicy>
                     <columns>
-                        <TableColumn fx:id="colSchedId" text="ID" prefWidth="50"/>
-                        <TableColumn fx:id="colSchedType" text="Тип" prefWidth="100"/>
-                        <TableColumn fx:id="colSchedCategory" text="Категория" prefWidth="160"/>
-                        <TableColumn fx:id="colSchedDescription" text="Описание" prefWidth="220"/>
-                        <TableColumn fx:id="colSchedAmount" text="Сумма" prefWidth="120"/>
-                        <TableColumn fx:id="colSchedDay" text="День месяца" prefWidth="120"/>
-                        <TableColumn fx:id="colSchedLast" text="Последний запуск" prefWidth="150"/>
-                        <TableColumn fx:id="colSchedDelete" text="Удалить" prefWidth="80"/>
+                        <TableColumn fx:id="colSchedId" text="ID" prefWidth="50" minWidth="50" maxWidth="50" resizable="false"/>
+                        <TableColumn fx:id="colSchedType" text="Тип" prefWidth="80" minWidth="80" maxWidth="80" resizable="false"/>
+                        <TableColumn fx:id="colSchedPeriod" text="Период" prefWidth="100" minWidth="100" maxWidth="100" resizable="false"/>
+                        <TableColumn fx:id="colSchedCategory" text="Категория" prefWidth="180" minWidth="180" maxWidth="180" resizable="false"/>
+                        <TableColumn fx:id="colSchedDescription" text="Описание" prefWidth="250" minWidth="250" maxWidth="250" resizable="false"/>
+                        <TableColumn fx:id="colSchedAmount" text="Сумма" prefWidth="120" minWidth="120" maxWidth="120" resizable="false"/>
+                        <TableColumn fx:id="colSchedLast" text="Последняя транзакция" prefWidth="230" minWidth="230" maxWidth="230" resizable="false"/>
+                        <TableColumn fx:id="colSchedDelete" text="Удалить" prefWidth="180" minWidth="180" maxWidth="180" resizable="false" style="-fx-alignment: CENTER;"/>
                     </columns>
                 </TableView>
 
@@ -228,12 +338,12 @@
         </Tab>
     </TabPane>
 
-    <HBox spacing="30" alignment="CENTER">
-        <Label text="Доходы:"/>
-        <Label fx:id="lblTotalIncome" text="0.00 руб."/>
-        <Label text="Расходы:"/>
-        <Label fx:id="lblTotalExpense" text="0.00 руб."/>
-        <Label text="Баланс:"/>
-        <Label fx:id="lblBalance" text="0.00 руб."/>
+    <HBox alignment="CENTER" spacing="30">
+        <Label text="Доходы:" />
+        <Label fx:id="lblTotalIncome" text="0.00 руб." />
+        <Label text="Расходы:" />
+        <Label fx:id="lblTotalExpense" text="0.00 руб." />
+        <Label text="Баланс:" />
+        <Label fx:id="lblBalance" text="0.00 руб." />
     </HBox>
 </VBox>

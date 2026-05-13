@@ -1,4 +1,4 @@
-package com.example.finance.repository;
+/*package com.example.finance.repository;
 
 import com.example.finance.model.RecurringTransaction;
 import com.example.finance.model.TransactionType;
@@ -15,7 +15,7 @@ public class RecurringTransactionRepositoryImpl {
     }
 
     public void save(RecurringTransaction rt) {
-        String sql = "INSERT INTO recurring_transactions (type, category, description, amount, day_of_month, last_executed) VALUES (?,?,?,?,?,?)";
+        String sql = "INSERT INTO recurring_transactions (type, category, description, amount, day_of_month, last_executed, period_type, month) VALUES (?,?,?,?,?,?,?,?)";
         try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, rt.getType().name());
             stmt.setString(2, rt.getCategory());
@@ -23,6 +23,8 @@ public class RecurringTransactionRepositoryImpl {
             stmt.setBigDecimal(4, rt.getAmount());
             stmt.setInt(5, rt.getDayOfMonth());
             stmt.setDate(6, rt.getLastExecuted() != null ? Date.valueOf(rt.getLastExecuted()) : null);
+            stmt.setString(7, rt.getPeriodType() != null ? rt.getPeriodType() : "MONTHLY");
+           // stmt.setInt(8, rt.getMonth() != null ? rt.getMonth() : 0);
             stmt.executeUpdate();
             ResultSet rs = stmt.getGeneratedKeys();
             if (rs.next()) rt.setId(rs.getInt(1));
@@ -46,6 +48,8 @@ public class RecurringTransactionRepositoryImpl {
                 rt.setDayOfMonth(rs.getInt("day_of_month"));
                 Date last = rs.getDate("last_executed");
                 if (last != null) rt.setLastExecuted(last.toLocalDate());
+                rt.setPeriodType(rs.getString("period_type"));
+                rt.setMonth(rs.getInt("month"));
                 list.add(rt);
             }
         } catch (SQLException e) {
@@ -74,4 +78,4 @@ public class RecurringTransactionRepositoryImpl {
             e.printStackTrace();
         }
     }
-}
+}*/

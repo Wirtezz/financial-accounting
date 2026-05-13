@@ -1,0 +1,1 @@
+ALTER TABLE recurring_transactions ADD COLUMN period_type VARCHAR(10) DEFAULT 'MONTHLY' NOT NULL CHECK (period_type IN ('MONTHLY', 'YEARLY'));

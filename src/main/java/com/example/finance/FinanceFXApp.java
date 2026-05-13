@@ -1,5 +1,6 @@
 package com.example.finance;
 
+import com.example.finance.util.HibernateUtil;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -42,6 +43,10 @@ public class FinanceFXApp extends Application {
         primaryStage.setMinWidth(1000);
         primaryStage.setMinHeight(650);
         primaryStage.show();
+
+        primaryStage.setOnCloseRequest(e -> {
+            HibernateUtil.shutdown();
+        });
     }
 
     public static void main(String[] args) {
